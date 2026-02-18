@@ -1,0 +1,620 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "GrowFast API",
+        "description": "API REST pour la découverte et le matching d'opportunités de financement pour startups.",
+        "version": "1.0"
+    },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Inscription",
+                "operationId": "authRegister",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Utilisateur créé"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Connexion",
+                "operationId": "authLogin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token JWT",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "access_token": {
+                                            "type": "string"
+                                        },
+                                        "token_type": {
+                                            "type": "string",
+                                            "example": "bearer"
+                                        },
+                                        "expires_in": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Déconnexion",
+                "operationId": "authLogout",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Rafraîchir le token",
+                "operationId": "authRefresh",
+                "responses": {
+                    "200": {
+                        "description": "Nouveau token"
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Utilisateur connecté",
+                "operationId": "authMe",
+                "responses": {
+                    "200": {
+                        "description": "User object"
+                    }
+                }
+            }
+        },
+        "/opportunities": {
+            "get": {
+                "tags": [
+                    "Opportunities"
+                ],
+                "summary": "Liste des opportunités",
+                "operationId": "opportunitiesIndex",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Opportunities"
+                ],
+                "summary": "Créer une opportunité",
+                "description": "Nécessite la permission manage_opportunities",
+                "operationId": "opportunitiesStore",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "funding_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "grant",
+                                            "equity",
+                                            "debt",
+                                            "prize",
+                                            "other"
+                                        ]
+                                    },
+                                    "deadline": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "funding_min": {
+                                        "type": "number"
+                                    },
+                                    "funding_max": {
+                                        "type": "number"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Créé"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                }
+            }
+        },
+        "/opportunities/{id}": {
+            "get": {
+                "tags": [
+                    "Opportunities"
+                ],
+                "summary": "Détail opportunité",
+                "operationId": "opportunitiesShow",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Opportunities"
+                ],
+                "summary": "Modifier",
+                "description": "manage_opportunities",
+                "operationId": "opportunitiesUpdate",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Opportunities"
+                ],
+                "summary": "Supprimer",
+                "description": "manage_opportunities",
+                "operationId": "opportunitiesDestroy",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                }
+            }
+        },
+        "/subscriptions": {
+            "get": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Liste des plans",
+                "operationId": "subscriptionsIndex",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/subscriptions/my": {
+            "get": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Mon abonnement actif",
+                "operationId": "subscriptionsMy",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/user-subscriptions/subscribe": {
+            "post": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "S'abonner",
+                "operationId": "userSubscribe",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "subscription_id": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/user-subscriptions/cancel": {
+            "post": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Annuler l'abonnement",
+                "operationId": "userCancel",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/startups/{startup}/documents": {
+            "get": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Liste des documents",
+                "operationId": "documentsIndex",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Upload document",
+                "operationId": "documentsStore",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Créé"
+                    }
+                }
+            }
+        },
+        "/startups/{startup}/documents/{document}": {
+            "delete": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Supprimer document",
+                "operationId": "documentsDestroy",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                }
+            }
+        },
+        "/startups/{startup}/matches": {
+            "get": {
+                "tags": [
+                    "Matching"
+                ],
+                "summary": "Opportunités matchées",
+                "operationId": "matchesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Liste des matches avec scores"
+                    }
+                }
+            }
+        },
+        "/scraping/run": {
+            "post": {
+                "tags": [
+                    "Scraping"
+                ],
+                "summary": "Lancer le scraping",
+                "description": "Nécessite run_scraper",
+                "operationId": "scrapingRun",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/opportunity-suggestions": {
+            "post": {
+                "tags": [
+                    "Suggestions"
+                ],
+                "summary": "Proposer une opportunité",
+                "description": "Public ou authentifié",
+                "operationId": "suggestionsStore",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "grant_name"
+                                ],
+                                "properties": {
+                                    "grant_name": {
+                                        "type": "string"
+                                    },
+                                    "url": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Créé"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/startups": {
+            "get": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Liste des startups",
+                "operationId": "startupsIndex",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Créer une startup",
+                "operationId": "startupsStore",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "industry": {
+                                        "type": "string"
+                                    },
+                                    "stage": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Créé"
+                    }
+                }
+            }
+        },
+        "/startups/{id}": {
+            "get": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Détail startup",
+                "operationId": "startupsShow",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Modifier",
+                "operationId": "startupsUpdate",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Supprimer",
+                "operationId": "startupsDestroy",
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Token JWT obtenu via /api/auth/login",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Authentification JWT et OAuth"
+        },
+        {
+            "name": "Opportunities",
+            "description": "Opportunités de financement"
+        },
+        {
+            "name": "Startups",
+            "description": "Gestion des startups"
+        },
+        {
+            "name": "Subscriptions",
+            "description": "Abonnements"
+        },
+        {
+            "name": "Documents",
+            "description": "Documents des startups"
+        },
+        {
+            "name": "Matching",
+            "description": "Matching opportunités-startups"
+        },
+        {
+            "name": "Scraping",
+            "description": "Scraping (admin)"
+        },
+        {
+            "name": "Suggestions",
+            "description": "Suggestions d'opportunités"
+        }
+    ]
+}

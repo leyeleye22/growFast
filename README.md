@@ -20,6 +20,7 @@
 - [Admin Filament](#-admin-filament)
 - [Architecture](#-architecture)
 - [API](#-api)
+- [Documentation Swagger](#-documentation-swagger)
 - [Commandes Artisan](#-commandes-artisan)
 - [Tests](#-tests)
 - [Sécurité](#-sécurité)
@@ -310,6 +311,23 @@ app/
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
 | `POST` | `/api/opportunity-suggestions` | Proposer une opportunité *(public ou auth)* |
+
+### Documentation Swagger
+
+La documentation interactive de l'API est disponible via **Swagger UI** (L5-Swagger) :
+
+| URL | Description |
+|-----|-------------|
+| `/api/documentation` | Interface Swagger UI |
+
+**Génération des docs** :
+```bash
+php artisan l5-swagger:generate
+```
+
+En mode `APP_DEBUG=true`, la documentation est régénérée automatiquement à chaque requête.
+
+**Authentification** : Cliquez sur « Authorize » et saisissez `Bearer {votre_token_jwt}`.
 
 ### Headers requis (routes protégées)
 
