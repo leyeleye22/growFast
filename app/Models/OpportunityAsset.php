@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class OpportunityAsset extends Model
+{
+    protected $fillable = [
+        'opportunity_id',
+        'type',
+        'path',
+        'name',
+        'mime_type',
+        'size',
+    ];
+
+    protected $casts = [
+        'size' => 'integer',
+    ];
+
+    public function opportunity(): BelongsTo
+    {
+        return $this->belongsTo(Opportunity::class);
+    }
+}
