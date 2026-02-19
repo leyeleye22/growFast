@@ -204,7 +204,7 @@ app/
 ├── Console/Commands/          # scrape:run, matches:recalculate
 ├── Enums/                     # SubscriptionStatus, OpportunityStatus, FundingType
 ├── Filament/
-│   ├── Pages/                 # TestMatchingPage, TestScrapingPage
+│   ├── Pages/                 # Custom Filament pages
 │   ├── Resources/             # UserResource, StartupResource, OpportunityResource
 │   └── Widgets/                # StatsOverviewWidget, RegistrationsChartWidget
 ├── Http/

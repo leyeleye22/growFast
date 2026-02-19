@@ -77,7 +77,7 @@ class NotificationController extends Controller
             $notification = $request->user()->notifications()->findOrFail($id);
             $notification->delete();
 
-            return response()->json(['message' => 'Notification supprimée']);
+            return response()->json(['message' => 'Notification deleted']);
         } catch (Throwable $e) {
             Log::error('NotificationController@destroy failed', ['exception' => $e]);
             throw $e;

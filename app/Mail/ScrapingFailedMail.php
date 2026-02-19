@@ -23,7 +23,7 @@ class ScrapingFailedMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'GrowFast — Erreur de scraping',
+            subject: 'GrowFast — Scraping error',
         );
     }
 

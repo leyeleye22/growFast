@@ -1,11 +1,13 @@
 <?php
 
-
-
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,7 +20,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Gestion';
+    protected static string|\UnitEnum|null $navigationGroup = 'Management';
 
     public static function form(Schema $schema): Schema
     {
@@ -33,17 +35,24 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id')->sortable(),
-                TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('email')->searchable()->sortable(),
-                TextColumn::make('email_verified_at')->dateTime()->sortable(),
-                TextColumn::make('created_at')->dateTime()->sortable(),
+                TextColumn::make('id')->sortable()->toggleable(),
+                TextColumn::make('name')->searchable()->sortable()->weight('medium'),
+                TextColumn::make('email')->searchable()->sortable()->copyable(),
+                TextColumn::make('email_verified_at')->dateTime()->sortable()->placeholder('Not verified')->badge()->color(fn ($state) => $state ? 'success' : 'gray'),
+                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(),
+            ])
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()->label('View'),
+                    EditAction::make()->label('Edit'),
+                    DeleteAction::make()->label('Delete'),
+                ])->label('Actions')->icon('heroicon-m-ellipsis-vertical'),
             ])
             ->filters([
                 SelectFilter::make('verified')
                     ->options([
-                        '1' => 'Vérifié',
-                        '0' => 'Non vérifié',
+                        '1' => 'Verified',
+                        '0' => 'Not verified',
                     ])
                     ->query(fn (Builder $q, array $data) => $data['value'] === '1'
                         ? $q->whereNotNull('email_verified_at')
@@ -61,6 +70,7 @@ class UserResource extends Resource
     {
         return [
             'index' => Pages\ListUsers::route('/'),
+            'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }

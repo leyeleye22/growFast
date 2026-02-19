@@ -12,17 +12,17 @@ class SendOpportunityRemindersCommand extends Command
 {
     protected $signature = 'opportunities:send-reminders';
 
-    protected $description = 'Envoie des rappels par email et DB aux utilisateurs ayant sauvegardé des opportunités avec deadline proche';
+    protected $description = 'Sends email and DB reminders to users who saved opportunities with upcoming deadlines';
 
     public function handle(): int
     {
         if (! config('notifications.enabled', true)) {
-            $this->info('Notifications désactivées.');
+            $this->info('Notifications disabled.');
 
             return self::SUCCESS;
         }
 
-        $this->info('Envoi des rappels opportunités...');
+        $this->info('Sending opportunity reminders...');
 
         $toRemind = SavedOpportunity::query()
             ->with(['opportunity', 'startup.user'])
@@ -50,11 +50,11 @@ class SendOpportunityRemindersCommand extends Command
                 $saved->update(['last_reminder_at' => now()]);
                 $sent++;
             } catch (\Throwable $e) {
-                $this->error("Erreur pour {$user->email}: {$e->getMessage()}");
+                $this->error("Error for {$user->email}: {$e->getMessage()}");
             }
         }
 
-        $this->info("Rappels envoyés : {$sent}");
+        $this->info("Reminders sent: {$sent}");
 
         return self::SUCCESS;
     }

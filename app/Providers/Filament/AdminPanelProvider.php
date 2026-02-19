@@ -29,8 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->navigationGroups([
-                'Matching',
-                'Gestion',
+                'Management',
             ])
             ->colors([
                 'primary' => Color::Amber,

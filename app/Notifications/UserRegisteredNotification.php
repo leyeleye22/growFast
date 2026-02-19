@@ -23,8 +23,8 @@ class UserRegisteredNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Bienvenue sur GrowFast')
             ->greeting("Bonjour {$notifiable->name},")
-            ->line('Votre compte a été créé avec succès.')
-            ->line('Connectez-vous pour découvrir les opportunités de financement adaptées à votre startup.')
+            ->line('Your account has been created successfully.')
+            ->line('Log in to discover funding opportunities tailored to your startup.')
             ->action('Accéder à l\'application', url('/'));
     }
 
@@ -33,7 +33,7 @@ class UserRegisteredNotification extends Notification implements ShouldQueue
         return [
             'type' => 'welcome',
             'title' => 'Bienvenue sur GrowFast',
-            'message' => 'Votre compte a été créé avec succès.',
+            'message' => 'Your account has been created successfully.',
         ];
     }
 }

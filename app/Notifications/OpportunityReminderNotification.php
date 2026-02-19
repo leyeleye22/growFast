@@ -29,12 +29,12 @@ class OpportunityReminderNotification extends Notification implements ShouldQueu
         $deadline = $opp->deadline?->format('d/m/Y') ?? '-';
 
         return (new MailMessage)
-            ->subject("GrowFast — N'oubliez pas : {$opp->title}")
-            ->greeting("Bonjour {$notifiable->name},")
-            ->line("Vous aviez sauvegardé une opportunité. N'oubliez pas de candidater avant la date limite !")
+            ->subject("GrowFast — Don't forget: {$opp->title}")
+            ->greeting("Hello {$notifiable->name},")
+            ->line("You had saved an opportunity. Don't forget to apply before the deadline!")
             ->line("**{$opp->title}**")
-            ->line("Date limite : {$deadline}")
-            ->when($opp->external_url, fn (MailMessage $m) => $m->action('Voir l\'opportunité', $opp->external_url));
+            ->line("Deadline: {$deadline}")
+            ->when($opp->external_url, fn (MailMessage $m) => $m->action('View opportunity', $opp->external_url));
     }
 
     public function toArray(object $notifiable): array
@@ -43,8 +43,8 @@ class OpportunityReminderNotification extends Notification implements ShouldQueu
 
         return [
             'type' => 'opportunity_reminder',
-            'title' => "N'oubliez pas : {$opp->title}",
-            'message' => "Date limite : " . ($opp->deadline?->format('d/m/Y') ?? '-'),
+            'title' => "Don't forget: {$opp->title}",
+            'message' => "Deadline: " . ($opp->deadline?->format('d/m/Y') ?? '-'),
             'opportunity_id' => $opp->id,
             'external_url' => $opp->external_url,
         ];

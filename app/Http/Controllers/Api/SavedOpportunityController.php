@@ -55,11 +55,11 @@ class SavedOpportunityController extends Controller
             );
 
             return response()->json([
-                'message' => 'Opportunité sauvegardée. Vous recevrez un rappel avant la date limite.',
+                'message' => 'Opportunity saved. You will receive a reminder before the deadline.',
                 'saved_opportunity' => $saved->load('opportunity'),
             ], 201);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Opportunité introuvable'], 404);
+            return response()->json(['message' => 'Opportunity not found'], 404);
         } catch (Throwable $e) {
             Log::error('SavedOpportunityController@save failed', ['exception' => $e]);
             throw $e;
@@ -83,9 +83,9 @@ class SavedOpportunityController extends Controller
                 ->where('opportunity_id', $opportunityModel->id)
                 ->delete();
 
-            return response()->json(['message' => 'Opportunité retirée des sauvegardes']);
+            return response()->json(['message' => 'Opportunity removed from saved']);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Opportunité introuvable'], 404);
+            return response()->json(['message' => 'Opportunity not found'], 404);
         } catch (Throwable $e) {
             Log::error('SavedOpportunityController@unsave failed', ['exception' => $e]);
             throw $e;

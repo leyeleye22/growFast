@@ -39,6 +39,7 @@ class OpportunityExtractor
         if (!$extracted) {
             return [
                 'title' => null,
+                'description' => null,
                 'funding_type' => null,
                 'deadline' => null,
                 'industry' => null,
@@ -59,14 +60,31 @@ class OpportunityExtractor
         $deadline = $extracted['deadline'] ?? null;
 
         return [
-            'title' => $extracted['title'] ?? 'Untitled',
+            'title' => $this->sanitizeText($extracted['title'] ?? 'Untitled'),
+            'description' => $this->sanitizeText($extracted['description'] ?? null),
             'funding_type' => $this->normalizeFundingType($extracted['funding_type'] ?? null),
             'deadline' => $deadline,
-            'industry' => $extracted['industry'] ?? null,
+            'industry' => $this->sanitizeText($extracted['industry'] ?? null),
             'stage' => $extracted['stage'] ?? null,
             'funding_min' => $this->parseFundingAmount($extracted['funding_min'] ?? null),
             'funding_max' => $this->parseFundingAmount($extracted['funding_max'] ?? null),
         ];
+    }
+
+    /**
+     * Decode HTML entities and clean text for display.
+     * e.g. "fundsforNGOs &#8211; Grants" → "fundsforNGOs – Grants"
+     */
+    protected function sanitizeText(?string $text): ?string
+    {
+        if ($text === null || $text === '') {
+            return null;
+        }
+        $cleaned = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $cleaned = strip_tags($cleaned);
+        $cleaned = trim($cleaned);
+
+        return $cleaned === '' ? null : $cleaned;
     }
 
     protected function callAI(string $rawContent): ?array
@@ -85,6 +103,7 @@ class OpportunityExtractor
     {
         return [
             'title' => $this->extractTitle($content),
+            'description' => $this->extractDescription($content),
             'funding_type' => $this->extractFundingType($content),
             'deadline' => $this->extractDeadline($content),
             'industry' => null,
@@ -92,6 +111,26 @@ class OpportunityExtractor
             'funding_min' => $this->extractFundingMin($content),
             'funding_max' => $this->extractFundingMax($content),
         ];
+    }
+
+    protected function extractDescription(string $content): ?string
+    {
+        if (preg_match('/<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)["\']/i', $content, $m)) {
+            return $this->sanitizeText($m[1]);
+        }
+        if (preg_match('/<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']description["\']/i', $content, $m)) {
+            return $this->sanitizeText($m[1]);
+        }
+        if (preg_match('/<p[^>]*>([^<]{50,500})<\/p>/i', $content, $m)) {
+            return $this->sanitizeText($m[1]);
+        }
+        $text = strip_tags($content);
+        $text = preg_replace('/\s+/', ' ', $text);
+        $text = trim($text);
+        if (strlen($text) > 100) {
+            return $this->sanitizeText(mb_substr($text, 0, 500) . '...');
+        }
+        return null;
     }
 
     protected function extractTitle(string $content): string
@@ -120,6 +159,36 @@ class OpportunityExtractor
             $date = Carbon::createFromFormat('m/d/Y', $m[1])->format('Y-m-d');
             return Carbon::parse($date)->gte(now()->startOfDay()) ? $date : null;
         }
+        $parsed = $this->parseFrenchDateRange($content);
+        if ($parsed) {
+            return $parsed;
+        }
+        return null;
+    }
+
+    private function parseFrenchDateRange(string $content): ?string
+    {
+        $months = [
+            'janvier' => '01', 'janv' => '01', 'février' => '02', 'févr' => '02', 'fevrier' => '02',
+            'mars' => '03', 'avril' => '04', 'avr' => '04', 'mai' => '05', 'juin' => '06',
+            'juillet' => '07', 'juil' => '07', 'août' => '08', 'aout' => '08', 'septembre' => '09',
+            'sept' => '09', 'octobre' => '10', 'oct' => '10', 'novembre' => '11', 'nov' => '11',
+            'décembre' => '12', 'dec' => '12', 'décem' => '12',
+        ];
+        if (preg_match('/au\s+(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|janv|févr|avr|juil|sept|oct|nov|décem|dec)\s+(\d{4})/ui', $content, $m)) {
+            $month = $months[strtolower(trim($m[2]))] ?? null;
+            if ($month) {
+                $date = sprintf('%d-%s-%02d', (int) $m[3], $month, (int) $m[1]);
+                return Carbon::parse($date)->gte(now()->startOfDay()) ? $date : null;
+            }
+        }
+        if (preg_match('/(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|janv|févr|avr|juil|sept|oct|nov|décem|dec)\s+(\d{4})/ui', $content, $m)) {
+            $month = $months[strtolower(trim($m[2]))] ?? null;
+            if ($month) {
+                $date = sprintf('%d-%s-%02d', (int) $m[3], $month, (int) $m[1]);
+                return Carbon::parse($date)->gte(now()->startOfDay()) ? $date : null;
+            }
+        }
         return null;
     }
 
@@ -142,9 +211,13 @@ class OpportunityExtractor
     protected function normalizeFundingType(?string $type): ?string
     {
         if (!$type) return null;
+        $cleaned = $this->sanitizeText($type);
+        if (!$cleaned) return null;
         $valid = ['grant', 'equity', 'debt', 'prize', 'other'];
-        $lower = strtolower(trim($type));
-        return in_array($lower, $valid) ? $lower : null;
+        $lower = strtolower(trim($cleaned));
+        if (in_array($lower, $valid)) return $lower;
+        if (str_contains($lower, 'hackathon') || str_contains($lower, 'competition') || str_contains($lower, 'challenge')) return 'prize';
+        return null;
     }
 
     protected function parseFundingAmount(mixed $value): ?float

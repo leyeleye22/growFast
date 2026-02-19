@@ -1,18 +1,21 @@
 <?php
 
-
-
 namespace App\Filament\Resources;
 
-use App\Filament\Pages\TestMatchingPage;
 use App\Filament\Resources\StartupResource\Pages;
 use App\Models\Startup;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -22,7 +25,7 @@ class StartupResource extends Resource
 {
     protected static ?string $model = Startup::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Gestion';
+    protected static string|\UnitEnum|null $navigationGroup = 'Management';
 
     public static function form(Schema $schema): Schema
     {
@@ -61,23 +64,25 @@ class StartupResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('user.name')->label('Propriétaire')->searchable(),
-                TextColumn::make('industry')->searchable(),
-                TextColumn::make('stage'),
+                TextColumn::make('name')->searchable()->sortable()->weight('medium'),
+                TextColumn::make('user.name')->label('Owner')->searchable(),
+                TextColumn::make('industry')->searchable()->badge()->color('info'),
+                TextColumn::make('stage')->badge()->color('gray'),
                 TextColumn::make('country'),
-                TextColumn::make('created_at')->dateTime()->sortable(),
+                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('industry')->options(fn () => Startup::query()->distinct()->pluck('industry', 'industry')->toArray()),
                 SelectFilter::make('country'),
             ])
-            ->actions([
-                Action::make('testMatching')
-                    ->label('Tester le matching')
-                    ->icon('heroicon-o-beaker')
-                    ->url(fn (Startup $record): string => TestMatchingPage::getUrl(['startup' => $record->id]))
-                    ->openUrlInNewTab(false),
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()->label('View'),
+                    EditAction::make()->label('Edit'),
+                    DeleteAction::make()->label('Delete'),
+                    ForceDeleteAction::make()->label('Force delete'),
+                    RestoreAction::make()->label('Restore'),
+                ])->label('Actions')->icon('heroicon-m-ellipsis-vertical'),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -91,6 +96,7 @@ class StartupResource extends Resource
     {
         return [
             'index' => Pages\ListStartups::route('/'),
+            'view' => Pages\ViewStartup::route('/{record}'),
             'edit' => Pages\EditStartup::route('/{record}/edit'),
         ];
     }

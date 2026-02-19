@@ -85,7 +85,11 @@ Route::middleware('auth:api')->prefix('startups/{startup}')->group(function (): 
     Route::delete('/opportunities/{opportunity}/save', [SavedOpportunityController::class, 'unsave']);
 });
 
-Route::middleware('auth:api')->post('/scraping/run', [ScrapingController::class, 'run']);
+Route::middleware('auth:api')->prefix('scraping')->group(function (): void {
+    Route::post('/run', [ScrapingController::class, 'run']);
+    Route::post('/extract', [ScrapingController::class, 'extract']);
+    Route::post('/fetch', [ScrapingController::class, 'fetch']);
+});
 
 Route::middleware('auth:api')->prefix('notifications')->group(function (): void {
     Route::get('/', [NotificationController::class, 'index']);

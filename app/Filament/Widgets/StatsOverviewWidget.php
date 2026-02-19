@@ -20,21 +20,21 @@ class StatsOverviewWidget extends BaseWidget
         $today = now()->startOfDay();
 
         return [
-            Stat::make('Inscriptions aujourd\'hui', User::where('created_at', '>=', $today)->count())
-                ->description('Nouveaux utilisateurs')
+            Stat::make('Registrations today', User::where('created_at', '>=', $today)->count())
+                ->description('New users')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
 
             Stat::make('Startups total', Startup::count())
-                ->description('Sur la plateforme')
+                ->description('On platform')
                 ->descriptionIcon('heroicon-m-rocket-launch'),
 
-            Stat::make('Opportunités actives', Opportunity::withoutGlobalScopes()->where('status', 'active')->count())
-                ->description('Disponibles')
+            Stat::make('Active opportunities', Opportunity::withoutGlobalScopes()->where('status', 'active')->count())
+                ->description('Available')
                 ->descriptionIcon('heroicon-m-banknotes'),
 
             Stat::make('Matches calculés', OpportunityMatch::count())
-                ->description('Startup-Opportunité')
+                ->description('Startup-Opportunity')
                 ->descriptionIcon('heroicon-m-chart-bar'),
         ];
     }

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RegistrationsChartWidget extends ChartWidget
 {
-    protected ?string $heading = 'Inscriptions (7 derniers jours)';
+    protected ?string $heading = 'Registrations (last 7 days)';
 
     protected int | string | array $columnSpan = 'full';
 
@@ -27,7 +27,7 @@ class RegistrationsChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Inscriptions',
+                    'label' => 'Registrations',
                     'data' => $data['datasets'][0]['data'] ?? [],
                     'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
                     'borderColor' => 'rgb(59, 130, 246)',

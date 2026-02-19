@@ -1,12 +1,16 @@
 <?php
 
-
-
 namespace App\Filament\Resources;
 
 use App\Enums\OpportunityStatus;
 use App\Filament\Resources\OpportunityResource\Pages;
 use App\Models\Opportunity;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -21,7 +25,7 @@ class OpportunityResource extends Resource
 {
     protected static ?string $model = Opportunity::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Gestion';
+    protected static string|\UnitEnum|null $navigationGroup = 'Management';
 
     public static function form(Schema $schema): Schema
     {
@@ -48,13 +52,34 @@ class OpportunityResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')->searchable()->sortable(),
-                TextColumn::make('funding_type'),
-                TextColumn::make('deadline')->date()->sortable(),
+                TextColumn::make('title')->searchable()->sortable()->weight('medium'),
+                TextColumn::make('funding_type')->badge()->color(fn ($state): string => match ((string) $state) {
+                    'grant' => 'success',
+                    'equity' => 'primary',
+                    'debt' => 'warning',
+                    'prize' => 'info',
+                    default => 'gray',
+                }),
+                TextColumn::make('deadline')->date()->sortable()->color(fn ($state) => $state?->isPast() ? 'danger' : 'gray'),
                 TextColumn::make('funding_min')->money('USD'),
                 TextColumn::make('funding_max')->money('USD'),
-                TextColumn::make('status')->badge(),
-                TextColumn::make('created_at')->dateTime()->sortable(),
+                TextColumn::make('status')->badge()->color(fn ($state): string => match ($state?->value ?? (string) $state) {
+                    'active' => 'success',
+                    'pending' => 'warning',
+                    'expired' => 'danger',
+                    'archived' => 'gray',
+                    default => 'gray',
+                }),
+                TextColumn::make('created_at')->dateTime()->sortable()->toggleable(),
+            ])
+            ->recordActions([
+                ActionGroup::make([
+                    ViewAction::make()->label('View'),
+                    EditAction::make()->label('Edit'),
+                    DeleteAction::make()->label('Delete'),
+                    ForceDeleteAction::make()->label('Force delete'),
+                    RestoreAction::make()->label('Restore'),
+                ])->label('Actions')->icon('heroicon-m-ellipsis-vertical'),
             ])
             ->filters([
                 SelectFilter::make('funding_type')->options([
@@ -79,6 +104,7 @@ class OpportunityResource extends Resource
         return [
             'index' => Pages\ListOpportunities::route('/'),
             'create' => Pages\CreateOpportunity::route('/create'),
+            'view' => Pages\ViewOpportunity::route('/{record}'),
             'edit' => Pages\EditOpportunity::route('/{record}/edit'),
         ];
     }
