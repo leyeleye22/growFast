@@ -17,6 +17,19 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LinkedInAuthController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        return response()->json(['status' => 'ok', 'database' => 'connected']);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'database' => 'failed',
+            'message' => config('app.debug') ? $e->getMessage() : 'Database connection failed',
+        ], 500);
+    }
+});
+
 Route::prefix('auth')->group(function (): void {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);

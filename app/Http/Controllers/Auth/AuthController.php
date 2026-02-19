@@ -54,7 +54,11 @@ class AuthController extends Controller
             return $this->respondWithToken($token);
         } catch (Throwable $e) {
             LogService::exception($e, 'AuthController@register failed');
-            throw $e;
+
+            return response()->json([
+                'message' => config('app.debug') ? $e->getMessage() : 'Registration failed. Please try again or contact support.',
+                'exception' => config('app.debug') ? get_class($e) : null,
+            ], 500);
         }
     }
 
@@ -95,10 +99,12 @@ class AuthController extends Controller
 
     protected function respondWithToken(string $token): JsonResponse
     {
+        $ttl = (int) auth('api')->factory()->getTTL();
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'expires_in' => $ttl * 60,
         ]);
     }
 }
