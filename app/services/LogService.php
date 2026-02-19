@@ -11,7 +11,7 @@ class LogService
 {
     protected static function channel(): string
     {
-        return config('app.env') === 'testing' ? config('logging.default') : 'app';
+        return config('app.env') === 'testing' ? config('logging.default') : 'single';
     }
 
     public static function info(string $message, array $context = []): void
@@ -56,8 +56,7 @@ class LogService
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            $channel = config('app.env') === 'testing' ? config('logging.default') : 'exceptions';
-            Log::channel($channel)->error($message ?? $e->getMessage(), self::enrichContext($context));
+            Log::channel(self::channel())->error($message ?? $e->getMessage(), self::enrichContext($context));
         } catch (\Throwable) {
         }
     }
