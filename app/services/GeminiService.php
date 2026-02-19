@@ -29,7 +29,7 @@ class GeminiService
     public function generateContent(string $prompt, array $options = []): ?string
     {
         if (!$this->isConfigured()) {
-            Log::warning('Gemini API not configured; GEMINI_API_KEY missing in .env');
+            Log::error('Gemini API not configured; GEMINI_API_KEY missing in .env');
             return null;
         }
 
@@ -46,7 +46,10 @@ class GeminiService
             ->post($this->buildUrl(), $payload);
 
         if (!$response->ok()) {
-            Log::warning('Gemini API error: ' . $response->body());
+            Log::error('Gemini API error', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
             return null;
         }
 

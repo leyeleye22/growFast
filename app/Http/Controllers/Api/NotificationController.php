@@ -1,13 +1,11 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class NotificationController extends Controller
@@ -15,7 +13,7 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            LogService::request('GET', 'NotificationController@index');
+            Log::info('[GET] NotificationController@index');
 
             $user = $request->user();
             $perPage = min((int) $request->get('per_page', 15), 50);
@@ -25,7 +23,7 @@ class NotificationController extends Controller
 
             return response()->json($notifications);
         } catch (Throwable $e) {
-            LogService::exception($e, 'NotificationController@index failed');
+            Log::error('NotificationController@index failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -37,7 +35,7 @@ class NotificationController extends Controller
 
             return response()->json(['count' => $count]);
         } catch (Throwable $e) {
-            LogService::exception($e, 'NotificationController@unreadCount failed');
+            Log::error('NotificationController@unreadCount failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -45,14 +43,14 @@ class NotificationController extends Controller
     public function markAsRead(Request $request, string $id): JsonResponse
     {
         try {
-            LogService::request('PATCH', 'NotificationController@markAsRead', ['id' => $id]);
+            Log::info('[PATCH] NotificationController@markAsRead', ['id' => $id]);
 
             $notification = $request->user()->notifications()->findOrFail($id);
             $notification->markAsRead();
 
             return response()->json(['message' => 'Notification marquée comme lue', 'notification' => $notification->fresh()]);
         } catch (Throwable $e) {
-            LogService::exception($e, 'NotificationController@markAsRead failed');
+            Log::error('NotificationController@markAsRead failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -60,13 +58,13 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request): JsonResponse
     {
         try {
-            LogService::request('POST', 'NotificationController@markAllAsRead');
+            Log::info('[POST] NotificationController@markAllAsRead');
 
             $request->user()->unreadNotifications->markAsRead();
 
             return response()->json(['message' => 'Toutes les notifications ont été marquées comme lues']);
         } catch (Throwable $e) {
-            LogService::exception($e, 'NotificationController@markAllAsRead failed');
+            Log::error('NotificationController@markAllAsRead failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -74,14 +72,14 @@ class NotificationController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         try {
-            LogService::request('DELETE', 'NotificationController@destroy', ['id' => $id]);
+            Log::info('[DELETE] NotificationController@destroy', ['id' => $id]);
 
             $notification = $request->user()->notifications()->findOrFail($id);
             $notification->delete();
 
             return response()->json(['message' => 'Notification supprimée']);
         } catch (Throwable $e) {
-            LogService::exception($e, 'NotificationController@destroy failed');
+            Log::error('NotificationController@destroy failed', ['exception' => $e]);
             throw $e;
         }
     }

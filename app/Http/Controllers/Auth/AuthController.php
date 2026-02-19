@@ -1,7 +1,5 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -9,9 +7,9 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Mail\UserRegisteredMail;
 use App\Models\User;
-use App\Services\LogService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class AuthController extends Controller
@@ -19,17 +17,17 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            LogService::request('POST', 'AuthController@login');
+            Log::info('[POST] AuthController@login');
 
             if (!$token = auth('api')->attempt($request->validated())) {
-                LogService::warning('Login failed: invalid credentials', ['email' => $request->get('email')]);
+                Log::warning('Login failed: invalid credentials', ['email' => $request->get('email')]);
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
-            LogService::info('Login successful', ['user_id' => auth('api')->id()]);
+            Log::info('Login successful', ['user_id' => auth('api')->id()]);
             return $this->respondWithToken($token);
         } catch (Throwable $e) {
-            LogService::exception($e, 'AuthController@login failed');
+            Log::error('AuthController@login failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -37,23 +35,23 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            LogService::request('POST', 'AuthController@register');
+            Log::info('[POST] AuthController@register');
 
             $user = User::create($request->validated());
             $token = auth('api')->login($user);
 
-            LogService::info('Registration successful', ['user_id' => $user->id, 'email' => $user->email]);
+            Log::info('Registration successful', ['user_id' => $user->id, 'email' => $user->email]);
 
             try {
                 app(NotificationService::class)->send(new UserRegisteredMail($user));
                 $user->notify(new \App\Notifications\UserRegisteredNotification());
             } catch (Throwable $notifException) {
-                LogService::exception($notifException, 'Registration notifications failed (user created)');
+                Log::error('Registration notifications failed (user created)', ['exception' => $notifException]);
             }
 
             return $this->respondWithToken($token);
         } catch (Throwable $e) {
-            LogService::exception($e, 'AuthController@register failed');
+            Log::error('AuthController@register failed', ['exception' => $e]);
 
             return response()->json([
                 'message' => config('app.debug') ? $e->getMessage() : 'Registration failed. Please try again or contact support.',
@@ -65,10 +63,10 @@ class AuthController extends Controller
     public function me(): JsonResponse
     {
         try {
-            LogService::request('GET', 'AuthController@me');
+            Log::info('[GET] AuthController@me');
             return response()->json(auth('api')->user());
         } catch (Throwable $e) {
-            LogService::exception($e, 'AuthController@me failed');
+            Log::error('AuthController@me failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -76,12 +74,12 @@ class AuthController extends Controller
     public function logout(): JsonResponse
     {
         try {
-            LogService::request('POST', 'AuthController@logout');
+            Log::info('[POST] AuthController@logout');
             auth('api')->logout();
-            LogService::info('Logout successful');
+            Log::info('Logout successful');
             return response()->json(['message' => 'Successfully logged out']);
         } catch (Throwable $e) {
-            LogService::exception($e, 'AuthController@logout failed');
+            Log::error('AuthController@logout failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -89,10 +87,10 @@ class AuthController extends Controller
     public function refresh(): JsonResponse
     {
         try {
-            LogService::request('POST', 'AuthController@refresh');
+            Log::info('[POST] AuthController@refresh');
             return $this->respondWithToken(auth('api')->refresh());
         } catch (Throwable $e) {
-            LogService::exception($e, 'AuthController@refresh failed');
+            Log::error('AuthController@refresh failed', ['exception' => $e]);
             throw $e;
         }
     }

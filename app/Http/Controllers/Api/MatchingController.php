@@ -1,14 +1,12 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Startup;
-use App\Services\LogService;
 use App\Services\OpportunityMatchingService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class MatchingController extends Controller
@@ -23,11 +21,11 @@ class MatchingController extends Controller
             if ($startup->user_id !== request()->user()->id) {
                 abort(403);
             }
-            LogService::request('GET', 'MatchingController@index', ['startup_id' => $startup->id]);
+            Log::info('[GET] MatchingController@index', ['startup_id' => $startup->id]);
             $matches = $this->matchingService->calculateMatches($startup);
             return response()->json($matches);
         } catch (Throwable $e) {
-            LogService::exception($e, 'MatchingController@index failed');
+            Log::error('MatchingController@index failed', ['exception' => $e]);
             throw $e;
         }
     }

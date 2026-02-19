@@ -1,15 +1,13 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Opportunity;
 use App\Models\SavedOpportunity;
 use App\Models\Startup;
-use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class SavedOpportunityController extends Controller
@@ -20,7 +18,7 @@ class SavedOpportunityController extends Controller
             if ($startup->user_id !== request()->user()->id) {
                 abort(403);
             }
-            LogService::request('GET', 'SavedOpportunityController@index', ['startup_id' => $startup->id]);
+            Log::info('[GET] SavedOpportunityController@index', ['startup_id' => $startup->id]);
 
             $saved = $startup->savedOpportunities()
                 ->with(['opportunity' => fn ($q) => $q->withoutGlobalScopes()])
@@ -30,7 +28,7 @@ class SavedOpportunityController extends Controller
 
             return response()->json($saved);
         } catch (Throwable $e) {
-            LogService::exception($e, 'SavedOpportunityController@index failed');
+            Log::error('SavedOpportunityController@index failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -43,7 +41,7 @@ class SavedOpportunityController extends Controller
             }
             $opportunityModel = Opportunity::withoutGlobalScopes()->findOrFail($opportunity);
 
-            LogService::request('POST', 'SavedOpportunityController@save', [
+            Log::info('[POST] SavedOpportunityController@save', [
                 'startup_id' => $startup->id,
                 'opportunity_id' => $opportunityModel->id,
             ]);
@@ -63,7 +61,7 @@ class SavedOpportunityController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Opportunité introuvable'], 404);
         } catch (Throwable $e) {
-            LogService::exception($e, 'SavedOpportunityController@save failed');
+            Log::error('SavedOpportunityController@save failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -76,7 +74,7 @@ class SavedOpportunityController extends Controller
             }
             $opportunityModel = Opportunity::withoutGlobalScopes()->findOrFail($opportunity);
 
-            LogService::request('DELETE', 'SavedOpportunityController@unsave', [
+            Log::info('[DELETE] SavedOpportunityController@unsave', [
                 'startup_id' => $startup->id,
                 'opportunity_id' => $opportunityModel->id,
             ]);
@@ -89,7 +87,7 @@ class SavedOpportunityController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Opportunité introuvable'], 404);
         } catch (Throwable $e) {
-            LogService::exception($e, 'SavedOpportunityController@unsave failed');
+            Log::error('SavedOpportunityController@unsave failed', ['exception' => $e]);
             throw $e;
         }
     }

@@ -33,7 +33,10 @@ class NotificationService
         } catch (\Throwable $e) {
             Log::error('Notification failed', [
                 'mailable' => $mailable::class,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -53,7 +56,10 @@ class NotificationService
             Log::error('User notification failed', [
                 'user_id' => $user->id,
                 'notification' => $notification::class,
-                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }

@@ -1,15 +1,13 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOpportunityRequest;
 use App\Http\Requests\UpdateOpportunityRequest;
 use App\Models\Opportunity;
-use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class OpportunityController extends Controller
@@ -17,14 +15,14 @@ class OpportunityController extends Controller
     public function index(): JsonResponse
     {
         try {
-            LogService::request('GET', 'OpportunityController@index');
+            Log::info('[GET] OpportunityController@index');
             $opportunities = Opportunity::active()
                 ->with(['subscriptionRequired', 'industries', 'stages'])
                 ->paginate(15);
-            LogService::info('Opportunities listed', ['count' => $opportunities->total()]);
+            Log::info('Opportunities listed', ['count' => $opportunities->total()]);
             return response()->json($opportunities);
         } catch (Throwable $e) {
-            LogService::exception($e, 'OpportunityController@index failed');
+            Log::error('OpportunityController@index failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -32,12 +30,12 @@ class OpportunityController extends Controller
     public function show(Opportunity $opportunity): JsonResponse
     {
         try {
-            LogService::request('GET', 'OpportunityController@show', ['opportunity_id' => $opportunity->id]);
+            Log::info('[GET] OpportunityController@show', ['opportunity_id' => $opportunity->id]);
             $this->authorize('view', $opportunity);
             $opportunity->load(['subscriptionRequired', 'industries', 'stages', 'countryCodes']);
             return response()->json($opportunity);
         } catch (Throwable $e) {
-            LogService::exception($e, 'OpportunityController@show failed');
+            Log::error('OpportunityController@show failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -45,12 +43,12 @@ class OpportunityController extends Controller
     public function store(StoreOpportunityRequest $request): JsonResponse
     {
         try {
-            LogService::request('POST', 'OpportunityController@store');
+            Log::info('[POST] OpportunityController@store');
             $opportunity = Opportunity::create($request->validated());
-            LogService::info('Opportunity created', ['opportunity_id' => $opportunity->id, 'title' => $opportunity->title]);
+            Log::info('Opportunity created', ['opportunity_id' => $opportunity->id, 'title' => $opportunity->title]);
             return response()->json($opportunity, 201);
         } catch (Throwable $e) {
-            LogService::exception($e, 'OpportunityController@store failed');
+            Log::error('OpportunityController@store failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -59,11 +57,11 @@ class OpportunityController extends Controller
     {
         try {
             $this->authorize('update', $opportunity);
-            LogService::request('PUT', 'OpportunityController@update', ['opportunity_id' => $opportunity->id]);
+            Log::info('[PUT] OpportunityController@update', ['opportunity_id' => $opportunity->id]);
             $opportunity->update($request->validated());
             return response()->json($opportunity);
         } catch (Throwable $e) {
-            LogService::exception($e, 'OpportunityController@update failed');
+            Log::error('OpportunityController@update failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -72,11 +70,11 @@ class OpportunityController extends Controller
     {
         try {
             $this->authorize('delete', $opportunity);
-            LogService::request('DELETE', 'OpportunityController@destroy', ['opportunity_id' => $opportunity->id]);
+            Log::info('[DELETE] OpportunityController@destroy', ['opportunity_id' => $opportunity->id]);
             $opportunity->delete();
             return response()->json(null, 204);
         } catch (Throwable $e) {
-            LogService::exception($e, 'OpportunityController@destroy failed');
+            Log::error('OpportunityController@destroy failed', ['exception' => $e]);
             throw $e;
         }
     }

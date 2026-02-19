@@ -1,13 +1,11 @@
 <?php
 
-
-
 namespace App\Exceptions;
 
-use App\Services\LogService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -21,9 +19,7 @@ class AppExceptionHandler
             return;
         }
 
-        LogService::exception($e, null, [
-            'report' => true,
-        ]);
+        Log::error($e->getMessage(), ['exception' => $e]);
     }
 
     public static function render(Throwable $e, Request $request): mixed
@@ -57,7 +53,7 @@ class AppExceptionHandler
             ], $e->getStatusCode());
         }
 
-        LogService::exception($e, 'Unhandled exception');
+        Log::error('Unhandled exception', ['exception' => $e]);
 
         return response()->json([
             'message' => config('app.debug') ? $e->getMessage() : 'Internal server error',

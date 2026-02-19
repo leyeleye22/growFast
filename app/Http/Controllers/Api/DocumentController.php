@@ -1,15 +1,13 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadDocumentRequest;
 use App\Models\Document;
 use App\Models\Startup;
-use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -24,7 +22,7 @@ class DocumentController extends Controller
             $documents = $startup->documents()->get();
             return response()->json($documents);
         } catch (Throwable $e) {
-            LogService::exception($e, 'DocumentController@index failed');
+            Log::error('DocumentController@index failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -43,10 +41,10 @@ class DocumentController extends Controller
                 'mime_type' => $file->getMimeType(),
                 'size' => $file->getSize(),
             ]);
-            LogService::info('Document uploaded', ['document_id' => $document->id]);
+            Log::info('Document uploaded', ['document_id' => $document->id]);
             return response()->json($document, 201);
         } catch (Throwable $e) {
-            LogService::exception($e, 'DocumentController@store failed');
+            Log::error('DocumentController@store failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -60,10 +58,10 @@ class DocumentController extends Controller
             }
             Storage::disk('local')->delete($document->path);
             $document->delete();
-            LogService::info('Document deleted', ['document_id' => $document->id]);
+            Log::info('Document deleted', ['document_id' => $document->id]);
             return response()->json(null, 204);
         } catch (Throwable $e) {
-            LogService::exception($e, 'DocumentController@destroy failed');
+            Log::error('DocumentController@destroy failed', ['exception' => $e]);
             throw $e;
         }
     }

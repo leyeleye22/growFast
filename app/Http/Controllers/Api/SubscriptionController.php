@@ -1,13 +1,11 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Subscription;
-use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class SubscriptionController extends Controller
@@ -15,11 +13,11 @@ class SubscriptionController extends Controller
     public function index(): JsonResponse
     {
         try {
-            LogService::request('GET', 'SubscriptionController@index');
+            Log::info('[GET] SubscriptionController@index');
             $subscriptions = Subscription::where('is_active', true)->get();
             return response()->json($subscriptions);
         } catch (Throwable $e) {
-            LogService::exception($e, 'SubscriptionController@index failed');
+            Log::error('SubscriptionController@index failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -27,11 +25,11 @@ class SubscriptionController extends Controller
     public function my(): JsonResponse
     {
         try {
-            LogService::request('GET', 'SubscriptionController@my');
+            Log::info('[GET] SubscriptionController@my');
             $active = request()->user()->activeSubscription;
             return response()->json($active ? $active->load('subscription') : null);
         } catch (Throwable $e) {
-            LogService::exception($e, 'SubscriptionController@my failed');
+            Log::error('SubscriptionController@my failed', ['exception' => $e]);
             throw $e;
         }
     }

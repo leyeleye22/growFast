@@ -1,15 +1,13 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
 
@@ -18,11 +16,11 @@ class LinkedInAuthController extends Controller
     public function redirect(): RedirectResponse
     {
         try {
-            LogService::request('GET', 'LinkedInAuthController@redirect');
+            Log::info('[GET] LinkedInAuthController@redirect');
             $this->ensureLinkedInConfig();
             return Socialite::driver('linkedin')->stateless()->redirect();
         } catch (Throwable $e) {
-            LogService::exception($e, 'LinkedInAuthController@redirect failed');
+            Log::error('LinkedInAuthController@redirect failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -30,10 +28,10 @@ class LinkedInAuthController extends Controller
     public function callback(Request $request): JsonResponse|RedirectResponse
     {
         try {
-            LogService::request('GET', 'LinkedInAuthController@callback');
+            Log::info('[GET] LinkedInAuthController@callback');
 
             if ($request->has('error')) {
-                LogService::warning('LinkedIn OAuth error', [
+                Log::warning('LinkedIn OAuth error', [
                     'error' => $request->get('error'),
                     'error_description' => $request->get('error_description'),
                 ]);
@@ -44,7 +42,7 @@ class LinkedInAuthController extends Controller
             }
 
             if (!$request->has('code')) {
-                LogService::warning('LinkedIn OAuth: missing code parameter');
+                Log::warning('LinkedIn OAuth: missing code parameter');
                 return response()->json([
                     'error' => 'invalid_request',
                     'error_description' => 'Missing authorization code. Ensure you are redirected from LinkedIn and the redirect URI matches exactly in LinkedIn Developer Portal.',
@@ -66,7 +64,7 @@ class LinkedInAuthController extends Controller
 
             $token = auth('api')->login($user);
 
-            LogService::info('LinkedIn OAuth login successful', ['user_id' => $user->id, 'email' => $user->email]);
+            Log::info('LinkedIn OAuth login successful', ['user_id' => $user->id, 'email' => $user->email]);
 
             return response()->json([
                 'access_token' => $token,
@@ -75,7 +73,7 @@ class LinkedInAuthController extends Controller
                 'user' => $user,
             ]);
         } catch (Throwable $e) {
-            LogService::exception($e, 'LinkedInAuthController@callback failed');
+            Log::error('LinkedInAuthController@callback failed', ['exception' => $e]);
             throw $e;
         }
     }

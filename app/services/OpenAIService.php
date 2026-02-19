@@ -59,12 +59,20 @@ class OpenAIService
             if ($response->ok()) {
                 return $response->json();
             } else {
-                Log::debug($response->json());
+                Log::error('OpenAI analyzeImage failed', [
+                    'status' => $response->status(),
+                    'body' => $response->json(),
+                ]);
 
                 return 'Request failed with status: '.$response->status();
             }
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::error('OpenAI analyzeImage exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return 'Error generating thread request: '.$e->getMessage();
         }
@@ -102,10 +110,19 @@ class OpenAIService
             if ($response->ok()) {
                 return $response->json();
             } else {
+                Log::error('OpenAI generateStructuredOutput failed', [
+                    'status' => $response->status(),
+                ]);
+
                 return 'Request failed with status: '.$response->status();
             }
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::error('OpenAI generateStructuredOutput exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return 'Error generating thread request: '.$e->getMessage();
         }
@@ -146,12 +163,20 @@ Ton objectif est de rendre la découverte du musée plus interactive, accessible
             if ($response->ok()) {
                 return $response->json();
             } else {
-                Log::debug($response->body());
+                Log::error('OpenAI createChatCompletion failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
 
                 return 'Request failed with status: '.$response->status();
             }
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::error('OpenAI createChatCompletion exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return 'Error Creating Thread Request: '.$e->getMessage();
         }
@@ -268,12 +293,20 @@ Ton objectif est de rendre la découverte du musée plus interactive, accessible
                     return $responseData ? json_decode($responseData, true) : null;
                 }
             } else {
-                Log::debug($response->getBody()->getContents());
+                Log::error('OpenAI createModelResponse failed', [
+                    'status' => $response->getStatusCode(),
+                    'body' => $response->getBody()->getContents(),
+                ]);
 
                 return 'Request failed with status: '.$response->getStatusCode();
             }
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::error('OpenAI createModelResponse exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return 'Error Creating Model Response: '.$e->getMessage();
         }

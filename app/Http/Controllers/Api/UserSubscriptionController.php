@@ -1,7 +1,5 @@
 <?php
 
-
-
 namespace App\Http\Controllers\Api;
 
 use App\Enums\SubscriptionStatus;
@@ -11,9 +9,9 @@ use App\Mail\UserSubscribedMail;
 use App\Mail\UserSubscriptionCancelledMail;
 use App\Models\Subscription;
 use App\Models\UserSubscription;
-use App\Services\LogService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class UserSubscriptionController extends Controller
@@ -21,7 +19,7 @@ class UserSubscriptionController extends Controller
     public function subscribe(SubscribeRequest $request): JsonResponse
     {
         try {
-            LogService::request('POST', 'UserSubscriptionController@subscribe');
+            Log::info('[POST] UserSubscriptionController@subscribe');
             $subscription = Subscription::findOrFail($request->validated('subscription_id'));
             if (!$subscription->is_active) {
                 return response()->json(['message' => 'Subscription plan is not available'], 422);
@@ -35,13 +33,13 @@ class UserSubscriptionController extends Controller
                 'status' => SubscriptionStatus::Active,
                 'auto_renew' => true,
             ]);
-            LogService::info('User subscribed', ['user_subscription_id' => $userSub->id]);
+            Log::info('User subscribed', ['user_subscription_id' => $userSub->id]);
 
             app(NotificationService::class)->send(new UserSubscribedMail($userSub->load(['user', 'subscription'])));
             $request->user()->notify(new \App\Notifications\UserSubscribedNotification($userSub->load('subscription')));
             return response()->json($userSub->load('subscription'), 201);
         } catch (Throwable $e) {
-            LogService::exception($e, 'UserSubscriptionController@subscribe failed');
+            Log::error('UserSubscriptionController@subscribe failed', ['exception' => $e]);
             throw $e;
         }
     }
@@ -49,18 +47,18 @@ class UserSubscriptionController extends Controller
     public function cancel(): JsonResponse
     {
         try {
-            LogService::request('POST', 'UserSubscriptionController@cancel');
+            Log::info('[POST] UserSubscriptionController@cancel');
             $active = request()->user()->activeSubscription;
             if (!$active) {
                 return response()->json(['message' => 'No active subscription'], 404);
             }
             $active->update(['status' => SubscriptionStatus::Cancelled, 'auto_renew' => false]);
-            LogService::info('Subscription cancelled', ['user_subscription_id' => $active->id]);
+            Log::info('Subscription cancelled', ['user_subscription_id' => $active->id]);
 
             app(NotificationService::class)->send(new UserSubscriptionCancelledMail($active->load(['user', 'subscription'])));
             return response()->json($active->load('subscription'));
         } catch (Throwable $e) {
-            LogService::exception($e, 'UserSubscriptionController@cancel failed');
+            Log::error('UserSubscriptionController@cancel failed', ['exception' => $e]);
             throw $e;
         }
     }

@@ -77,7 +77,8 @@ return [
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
+            // Niveau minimum: en prod sans LOG_LEVEL, 'error' assure que les erreurs sont visibles
+            'level' => env('LOG_LEVEL', config('app.env') === 'production' ? 'error' : 'debug'),
             'replace_placeholders' => true,
         ],
 
