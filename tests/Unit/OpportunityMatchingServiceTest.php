@@ -25,7 +25,7 @@ class OpportunityMatchingServiceTest extends TestCase
             'name' => 'Tech Startup',
             'industry' => 'tech',
             'stage' => 'seed',
-            'country' => 'US',
+            'country' => 'Senegal',
         ]);
 
         $stageSeed = Stage::create(['name' => 'Seed', 'slug' => 'seed']);

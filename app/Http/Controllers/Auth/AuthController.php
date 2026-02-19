@@ -44,8 +44,13 @@ class AuthController extends Controller
 
             LogService::info('Registration successful', ['user_id' => $user->id, 'email' => $user->email]);
 
-            app(NotificationService::class)->send(new UserRegisteredMail($user));
-            $user->notify(new \App\Notifications\UserRegisteredNotification());
+            try {
+                app(NotificationService::class)->send(new UserRegisteredMail($user));
+                $user->notify(new \App\Notifications\UserRegisteredNotification());
+            } catch (Throwable $notifException) {
+                LogService::exception($notifException, 'Registration notifications failed (user created)');
+            }
+
             return $this->respondWithToken($token);
         } catch (Throwable $e) {
             LogService::exception($e, 'AuthController@register failed');
