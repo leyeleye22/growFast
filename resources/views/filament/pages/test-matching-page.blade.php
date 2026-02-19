@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <x-filament-panels::form wire:submit="none">
+    <div>
         {{ $this->form }}
 
         @if($this->getMatches()->isNotEmpty())
@@ -50,5 +50,5 @@
                 </x-filament::section>
             </div>
         @endif
-    </x-filament-panels::form>
+    </div>
 </x-filament-panels::page>

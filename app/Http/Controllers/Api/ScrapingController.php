@@ -19,7 +19,7 @@ class ScrapingController extends Controller
                 return response()->json(['message' => 'Forbidden'], 403);
             }
             LogService::request('POST', 'ScrapingController@run');
-            Artisan::call('scrape:run');
+            Artisan::call('scrape:run', ['--triggered-by' => 'api']);
             LogService::info('Scrape run triggered');
             return response()->json(['message' => 'Scrape run completed']);
         } catch (Throwable $e) {

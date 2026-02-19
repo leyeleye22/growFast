@@ -164,6 +164,110 @@
                 }
             }
         },
+        "/notifications": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Liste des notifications",
+                "description": "Notifications internes (DB) de l'utilisateur connecté. Pagination via per_page (max 50).",
+                "operationId": "notificationsIndex",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/notifications/unread-count": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Nombre de notifications non lues",
+                "operationId": "notificationsUnreadCount",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/notifications/{id}/read": {
+            "patch": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Marquer une notification comme lue",
+                "operationId": "notificationsMarkAsRead",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/notifications/mark-all-read": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Marquer toutes les notifications comme lues",
+                "operationId": "notificationsMarkAllAsRead",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/notifications/{id}": {
+            "delete": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Supprimer une notification",
+                "operationId": "notificationsDestroy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/opportunities": {
             "get": {
                 "tags": [
@@ -285,6 +389,38 @@
                         "description": "No content"
                     }
                 }
+            }
+        },
+        "/industries": {
+            "get": {
+                "tags": [
+                    "Référentiels"
+                ],
+                "summary": "Liste des secteurs (industries)",
+                "description": "Public - pour les dropdowns",
+                "operationId": "industriesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Liste {id, name, slug}"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/stages": {
+            "get": {
+                "tags": [
+                    "Référentiels"
+                ],
+                "summary": "Liste des stades",
+                "description": "Public - pour les dropdowns",
+                "operationId": "stagesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Liste {id, name, slug}"
+                    }
+                },
+                "security": []
             }
         },
         "/subscriptions": {
@@ -480,6 +616,51 @@
                 "security": []
             }
         },
+        "/startups/{startup}/saved-opportunities": {
+            "get": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Liste des opportunités sauvegardées",
+                "description": "Opportunités que la startup a marquées comme intéressantes. Des rappels par email sont envoyés avant la date limite.",
+                "operationId": "savedOpportunitiesIndex",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/startups/{startup}/opportunities/{opportunity}/save": {
+            "post": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Sauvegarder une opportunité",
+                "description": "Marque l'opportunité comme intéressante. Un rappel par email sera envoyé avant la date limite.",
+                "operationId": "savedOpportunitySave",
+                "responses": {
+                    "201": {
+                        "description": "Opportunité sauvegardée"
+                    },
+                    "404": {
+                        "description": "Opportunité introuvable"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Startups"
+                ],
+                "summary": "Retirer une opportunité des sauvegardes",
+                "operationId": "savedOpportunityUnsave",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/startups": {
             "get": {
                 "tags": [
@@ -515,6 +696,53 @@
                                     },
                                     "country": {
                                         "type": "string"
+                                    },
+                                    "funding_min": {
+                                        "description": "Montant minimum souhaité",
+                                        "type": "number"
+                                    },
+                                    "funding_max": {
+                                        "description": "Montant maximum souhaité",
+                                        "type": "number"
+                                    },
+                                    "funding_types": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "grant",
+                                                "equity",
+                                                "debt",
+                                                "prize",
+                                                "other"
+                                            ]
+                                        }
+                                    },
+                                    "preferred_industries": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "preferred_stages": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "preferred_countries": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "deadline_min": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "deadline_max": {
+                                        "type": "string",
+                                        "format": "date"
                                     }
                                 },
                                 "type": "object"
@@ -572,9 +800,9 @@
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
-                "description": "Token JWT obtenu via /api/auth/login",
+                "scheme": "bearer",
                 "bearerFormat": "JWT",
-                "scheme": "bearer"
+                "description": "Token JWT obtenu via POST /api/auth/login"
             }
         }
     },
@@ -615,6 +843,14 @@
         {
             "name": "Suggestions",
             "description": "Suggestions d'opportunités"
+        },
+        {
+            "name": "Notifications",
+            "description": "Notifications internes (DB + mail)"
+        },
+        {
+            "name": "Référentiels",
+            "description": "Référentiels"
         }
     ]
 }

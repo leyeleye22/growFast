@@ -25,6 +25,7 @@ use OpenApi\Attributes as OAT;
         new OAT\Tag(name: 'Matching', description: 'Matching opportunités-startups'),
         new OAT\Tag(name: 'Scraping', description: 'Scraping (admin)'),
         new OAT\Tag(name: 'Suggestions', description: 'Suggestions d\'opportunités'),
+        new OAT\Tag(name: 'Notifications', description: 'Notifications internes (DB + mail)'),
     ]
 )]
 #[OAT\SecurityScheme(

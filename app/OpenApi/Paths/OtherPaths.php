@@ -6,6 +6,8 @@ namespace App\OpenApi\Paths;
 
 use OpenApi\Attributes as OAT;
 
+#[OAT\PathItem(path: '/industries', get: new OAT\Get(operationId: 'industriesIndex', summary: 'Liste des secteurs (industries)', tags: ['Référentiels'], description: 'Public - pour les dropdowns', responses: [new OAT\Response(response: 200, description: 'Liste {id, name, slug}')], security: []))]
+#[OAT\PathItem(path: '/stages', get: new OAT\Get(operationId: 'stagesIndex', summary: 'Liste des stades', tags: ['Référentiels'], description: 'Public - pour les dropdowns', responses: [new OAT\Response(response: 200, description: 'Liste {id, name, slug}')], security: []))]
 #[OAT\PathItem(path: '/subscriptions', get: new OAT\Get(operationId: 'subscriptionsIndex', summary: 'Liste des plans', tags: ['Subscriptions'], responses: [new OAT\Response(response: 200, description: 'OK')]))]
 #[OAT\PathItem(path: '/subscriptions/my', get: new OAT\Get(operationId: 'subscriptionsMy', summary: 'Mon abonnement actif', tags: ['Subscriptions'], responses: [new OAT\Response(response: 200, description: 'OK')]))]
 #[OAT\PathItem(

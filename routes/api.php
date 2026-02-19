@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\IndustryController;
 use App\Http\Controllers\Api\MatchingController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OpportunitySuggestionController;
 use App\Http\Controllers\Api\OpportunityController;
+use App\Http\Controllers\Api\SavedOpportunityController;
 use App\Http\Controllers\Api\ScrapingController;
+use App\Http\Controllers\Api\StageController;
 use App\Http\Controllers\Api\StartupController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\UserSubscriptionController;
@@ -63,8 +67,22 @@ Route::middleware('auth:api')->prefix('startups/{startup}')->group(function (): 
     Route::post('/documents', [DocumentController::class, 'store']);
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
     Route::get('/matches', [MatchingController::class, 'index']);
+    Route::get('/saved-opportunities', [SavedOpportunityController::class, 'index']);
+    Route::post('/opportunities/{opportunity}/save', [SavedOpportunityController::class, 'save']);
+    Route::delete('/opportunities/{opportunity}/save', [SavedOpportunityController::class, 'unsave']);
 });
 
 Route::middleware('auth:api')->post('/scraping/run', [ScrapingController::class, 'run']);
 
+Route::middleware('auth:api')->prefix('notifications')->group(function (): void {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/{id}', [NotificationController::class, 'destroy']);
+});
+
 Route::middleware('optional_auth')->post('/opportunity-suggestions', [OpportunitySuggestionController::class, 'store']);
+
+Route::get('/industries', [IndustryController::class, 'index']);
+Route::get('/stages', [StageController::class, 'index']);

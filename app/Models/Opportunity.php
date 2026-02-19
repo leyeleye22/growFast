@@ -108,4 +108,9 @@ class Opportunity extends Model
     {
         return $this->hasMany(OpportunityMatch::class);
     }
+
+    public function savedOpportunities(): HasMany
+    {
+        return $this->hasMany(SavedOpportunity::class);
+    }
 }

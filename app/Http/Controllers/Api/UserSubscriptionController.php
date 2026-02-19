@@ -7,9 +7,12 @@ namespace App\Http\Controllers\Api;
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SubscribeRequest;
+use App\Mail\UserSubscribedMail;
+use App\Mail\UserSubscriptionCancelledMail;
 use App\Models\Subscription;
 use App\Models\UserSubscription;
 use App\Services\LogService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
@@ -33,6 +36,9 @@ class UserSubscriptionController extends Controller
                 'auto_renew' => true,
             ]);
             LogService::info('User subscribed', ['user_subscription_id' => $userSub->id]);
+
+            app(NotificationService::class)->send(new UserSubscribedMail($userSub->load(['user', 'subscription'])));
+            $request->user()->notify(new \App\Notifications\UserSubscribedNotification($userSub->load('subscription')));
             return response()->json($userSub->load('subscription'), 201);
         } catch (Throwable $e) {
             LogService::exception($e, 'UserSubscriptionController@subscribe failed');
@@ -50,6 +56,8 @@ class UserSubscriptionController extends Controller
             }
             $active->update(['status' => SubscriptionStatus::Cancelled, 'auto_renew' => false]);
             LogService::info('Subscription cancelled', ['user_subscription_id' => $active->id]);
+
+            app(NotificationService::class)->send(new UserSubscriptionCancelledMail($active->load(['user', 'subscription'])));
             return response()->json($active->load('subscription'));
         } catch (Throwable $e) {
             LogService::exception($e, 'UserSubscriptionController@cancel failed');

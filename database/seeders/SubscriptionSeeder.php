@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Subscription;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class SubscriptionSeeder extends Seeder
 {
@@ -14,6 +15,7 @@ class SubscriptionSeeder extends Seeder
         Subscription::firstOrCreate(
             ['slug' => 'free'],
             [
+                'id' => (string) Str::uuid(),
                 'name' => 'Free',
                 'description' => 'Free tier with basic access',
                 'price' => 0,
@@ -27,6 +29,7 @@ class SubscriptionSeeder extends Seeder
         Subscription::firstOrCreate(
             ['slug' => 'premium'],
             [
+                'id' => (string) Str::uuid(),
                 'name' => 'Premium',
                 'description' => 'Premium tier with full access',
                 'price' => 29.99,

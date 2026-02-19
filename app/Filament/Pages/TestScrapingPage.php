@@ -74,7 +74,7 @@ class TestScrapingPage extends Page implements HasForms
             return;
         }
 
-        Artisan::call('scrape:run');
+        Artisan::call('scrape:run', ['--triggered-by' => 'api']);
         Notification::make()
             ->success()
             ->title('Scraping terminé')

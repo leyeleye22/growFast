@@ -20,6 +20,14 @@ use OpenApi\Attributes as OAT;
                     new OAT\Property(property: 'industry', type: 'string'),
                     new OAT\Property(property: 'stage', type: 'string'),
                     new OAT\Property(property: 'country', type: 'string'),
+                    new OAT\Property(property: 'funding_min', type: 'number', description: 'Montant minimum souhaité'),
+                    new OAT\Property(property: 'funding_max', type: 'number', description: 'Montant maximum souhaité'),
+                    new OAT\Property(property: 'funding_types', type: 'array', items: new OAT\Items(type: 'string', enum: ['grant', 'equity', 'debt', 'prize', 'other'])),
+                    new OAT\Property(property: 'preferred_industries', type: 'array', items: new OAT\Items(type: 'string')),
+                    new OAT\Property(property: 'preferred_stages', type: 'array', items: new OAT\Items(type: 'string')),
+                    new OAT\Property(property: 'preferred_countries', type: 'array', items: new OAT\Items(type: 'string')),
+                    new OAT\Property(property: 'deadline_min', type: 'string', format: 'date'),
+                    new OAT\Property(property: 'deadline_max', type: 'string', format: 'date'),
                 ]
             )
         ),

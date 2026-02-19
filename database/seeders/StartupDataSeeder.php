@@ -9,6 +9,7 @@ use App\Models\Stage;
 use App\Models\Startup;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class StartupDataSeeder extends Seeder
@@ -19,10 +20,12 @@ class StartupDataSeeder extends Seeder
 
         $startupRole = Role::findByName('startup', 'api');
 
+        $this->call([IndustrySeeder::class, StageSeeder::class]);
+
         $users = [
-            ['name' => 'Marie Dupont', 'email' => 'marie@startup.io', 'startup' => ['name' => 'TechFlow', 'industry' => 'Technology', 'stage' => 'seed', 'country' => 'FR']],
-            ['name' => 'Jean Martin', 'email' => 'jean@innovate.com', 'startup' => ['name' => 'InnovateHealth', 'industry' => 'HealthTech', 'stage' => 'series-a', 'country' => 'FR']],
-            ['name' => 'Aisha Johnson', 'email' => 'aisha@agritech.com', 'startup' => ['name' => 'AgriSmart', 'industry' => 'Agritech', 'stage' => 'seed', 'country' => 'US']],
+            ['name' => 'Marie Dupont', 'email' => 'marie@startup.io', 'startup' => ['name' => 'TechFlow', 'industry' => 'technology', 'stage' => 'seed', 'country' => 'FR']],
+            ['name' => 'Jean Martin', 'email' => 'jean@innovate.com', 'startup' => ['name' => 'InnovateHealth', 'industry' => 'healthtech', 'stage' => 'series-a', 'country' => 'FR']],
+            ['name' => 'Aisha Johnson', 'email' => 'aisha@agritech.com', 'startup' => ['name' => 'AgriSmart', 'industry' => 'agritech', 'stage' => 'seed', 'country' => 'US']],
         ];
 
         foreach ($users as $data) {
@@ -33,7 +36,7 @@ class StartupDataSeeder extends Seeder
             $user->assignRole($startupRole);
 
             if (!Startup::where('user_id', $user->id)->where('name', $data['startup']['name'])->exists()) {
-                Startup::create(array_merge($data['startup'], ['user_id' => $user->id]));
+                Startup::create(array_merge($data['startup'], ['id' => (string) Str::uuid(), 'user_id' => $user->id]));
             }
         }
     }

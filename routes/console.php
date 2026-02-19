@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('matches:recalculate')->daily();
+
+Schedule::command('opportunities:send-reminders')->dailyAt('09:00');

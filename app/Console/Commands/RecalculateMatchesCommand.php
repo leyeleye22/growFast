@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Mail\MatchesRecalculatedMail;
+use App\Models\Startup;
+use App\Services\NotificationService;
 use App\Services\OpportunityMatchingService;
 use Illuminate\Console\Command;
 
@@ -13,11 +16,14 @@ class RecalculateMatchesCommand extends Command
 
     protected $description = 'Recalculate opportunity matches for all startups';
 
-    public function handle(OpportunityMatchingService $matchingService): int
+    public function handle(OpportunityMatchingService $matchingService, NotificationService $notificationService): int
     {
         $this->info('Recalculating matches...');
 
         $matchingService->recalculateAll();
+
+        $startupsCount = Startup::count();
+        $notificationService->send(new MatchesRecalculatedMail($startupsCount));
 
         $this->info('Matches recalculated.');
 

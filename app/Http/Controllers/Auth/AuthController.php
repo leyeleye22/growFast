@@ -7,8 +7,10 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Mail\UserRegisteredMail;
 use App\Models\User;
 use App\Services\LogService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
@@ -41,6 +43,9 @@ class AuthController extends Controller
             $token = auth('api')->login($user);
 
             LogService::info('Registration successful', ['user_id' => $user->id, 'email' => $user->email]);
+
+            app(NotificationService::class)->send(new UserRegisteredMail($user));
+            $user->notify(new \App\Notifications\UserRegisteredNotification());
             return $this->respondWithToken($token);
         } catch (Throwable $e) {
             LogService::exception($e, 'AuthController@register failed');

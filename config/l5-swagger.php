@@ -13,6 +13,10 @@ return [
                  * Route for accessing api documentation interface
                  */
                 'api' => 'api/documentation',
+                /*
+                 * Route for the JSON spec (avoid /docs - blocked by Hostinger security)
+                 */
+                'docs' => 'api-docs',
             ],
             'paths' => [
                 /*

@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <x-filament-panels::form wire:submit="extract">
+    <form wire:submit="extract">
         {{ $this->form }}
 
         <div class="mt-6 flex flex-wrap gap-2">
@@ -93,5 +93,5 @@
                 </x-filament::section>
             </div>
         @endif
-    </x-filament-panels::form>
+    </form>
 </x-filament-panels::page>

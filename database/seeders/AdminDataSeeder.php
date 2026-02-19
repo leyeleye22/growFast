@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Industry;
 use App\Models\Opportunity;
-use App\Models\Stage;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class AdminDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([RolePermissionSeeder::class, SubscriptionSeeder::class]);
+        $this->call([RolePermissionSeeder::class, SubscriptionSeeder::class, IndustrySeeder::class, StageSeeder::class]);
 
         $admin = User::factory()->create([
             'name' => 'Admin GrowFast',
@@ -24,22 +23,6 @@ class AdminDataSeeder extends Seeder
             'password' => bcrypt('password'),
         ]);
         $admin->assignRole(Role::findByName('admin', 'web'));
-
-        $industries = ['Technology', 'Fintech', 'HealthTech', 'Agritech', 'EdTech'];
-        foreach ($industries as $name) {
-            Industry::firstOrCreate(
-                ['slug' => str($name)->slug()->toString()],
-                ['name' => $name]
-            );
-        }
-
-        $stages = ['Idea', 'Seed', 'Series A', 'Growth', 'Mature'];
-        foreach ($stages as $name) {
-            Stage::firstOrCreate(
-                ['slug' => str($name)->slug()->toString()],
-                ['name' => $name]
-            );
-        }
 
         $freeSub = Subscription::where('slug', 'free')->first();
         $premiumSub = Subscription::where('slug', 'premium')->first();
@@ -54,7 +37,7 @@ class AdminDataSeeder extends Seeder
         foreach ($opportunities as $opp) {
             Opportunity::withoutGlobalScopes()->firstOrCreate(
                 ['title' => $opp['title']],
-                array_merge($opp, ['status' => 'active'])
+                array_merge($opp, ['id' => (string) Str::uuid(), 'status' => 'active'])
             );
         }
     }
