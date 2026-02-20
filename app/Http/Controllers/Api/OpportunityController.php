@@ -19,7 +19,7 @@ class OpportunityController extends Controller
             $opportunities = Opportunity::active()
                 ->with(['subscriptionRequired', 'industries', 'stages'])
                 ->get();
-            Log::info('Opportunities listed', ['count' => $opportunities->total()]);
+            Log::info('Opportunities listed', ['count' => $opportunities->count()]);
             return response()->json($opportunities);
         } catch (Throwable $e) {
             Log::error('OpportunityController@index failed', ['exception' => $e]);
