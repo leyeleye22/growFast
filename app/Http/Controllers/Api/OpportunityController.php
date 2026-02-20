@@ -17,7 +17,7 @@ class OpportunityController extends Controller
         try {
             Log::info('[GET] OpportunityController@index');
             $opportunities = Opportunity::active()
-                ->with(['subscriptionRequired', 'industries', 'stages'])
+                ->with(['industries', 'stages'])
                 ->get();
             Log::info('Opportunities listed', ['count' => $opportunities->count()]);
             return response()->json($opportunities);
@@ -31,8 +31,8 @@ class OpportunityController extends Controller
     {
         try {
             Log::info('[GET] OpportunityController@show', ['opportunity_id' => $opportunity->id]);
-            $this->authorize('view', $opportunity);
-            $opportunity->load(['subscriptionRequired', 'industries', 'stages', 'countryCodes']);
+           // $this->authorize('view', $opportunity);
+            $opportunity->load([ 'industries', 'stages', 'countryCodes']);
             return response()->json($opportunity);
         } catch (Throwable $e) {
             Log::error('OpportunityController@show failed', ['exception' => $e]);
