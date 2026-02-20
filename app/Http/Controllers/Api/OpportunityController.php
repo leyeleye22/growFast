@@ -16,6 +16,11 @@ class OpportunityController extends Controller
     {
         try {
             Log::info('[GET] OpportunityController@index');
+            dd([
+    'all' => Opportunity::withoutGlobalScopes()->count(),
+    'not_expired_scope' => Opportunity::count(),
+    'active' => Opportunity::withoutGlobalScopes()->active()->count(),
+]);
             $opportunities = Opportunity::active()
                 ->with(['industries', 'stages'])
                 ->get();
@@ -31,7 +36,6 @@ class OpportunityController extends Controller
     {
         try {
             Log::info('[GET] OpportunityController@show', ['opportunity_id' => $opportunity->id]);
-           // $this->authorize('view', $opportunity);
             $opportunity->load([ 'industries', 'stages', 'countryCodes']);
             return response()->json($opportunity);
         } catch (Throwable $e) {
