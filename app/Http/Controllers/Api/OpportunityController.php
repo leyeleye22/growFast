@@ -18,7 +18,7 @@ class OpportunityController extends Controller
             Log::info('[GET] OpportunityController@index');
             $opportunities = Opportunity::active()
                 ->with(['subscriptionRequired', 'industries', 'stages'])
-                ->paginate(15);
+                ->get();
             Log::info('Opportunities listed', ['count' => $opportunities->total()]);
             return response()->json($opportunities);
         } catch (Throwable $e) {
