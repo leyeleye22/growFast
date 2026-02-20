@@ -7,7 +7,7 @@ namespace App\Jobs;
 use App\Enums\OpportunityStatus;
 use App\Models\Opportunity;
 use App\Models\ScrapedEntry;
-use App\Services\AI\OpportunityExtractor;
+use App\services\AI\OpportunityExtractor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

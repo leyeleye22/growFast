@@ -8,7 +8,7 @@ use App\Jobs\ProcessScrapedEntryJob;
 use App\Models\OpportunitySource;
 use App\Models\ScrapedEntry;
 use App\Models\ScrapingRun;
-use App\Services\AI\OpportunityExtractor;
+use App\services\AI\OpportunityExtractor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;

@@ -9,8 +9,8 @@ use App\Mail\ScrapingCompletedMail;
 use App\Mail\ScrapingFailedMail;
 use App\Mail\ScrapingStartedMail;
 use App\Models\ScrapedEntry;
-use App\Services\NotificationService;
-use App\Services\Scraping\ScraperManager;
+use App\services\NotificationService;
+use App\services\Scraping\ScraperManager;
 use Illuminate\Console\Command;
 
 class ScrapeRunCommand extends Command

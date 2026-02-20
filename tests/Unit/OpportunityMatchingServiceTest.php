@@ -9,7 +9,7 @@ use App\Models\Opportunity;
 use App\Models\Stage;
 use App\Models\Startup;
 use App\Models\User;
-use App\Services\OpportunityMatchingService;
+use App\services\OpportunityMatchingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

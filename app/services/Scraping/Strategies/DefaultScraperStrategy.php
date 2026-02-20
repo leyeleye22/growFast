@@ -2,11 +2,11 @@
 
 
 
-namespace App\Services\Scraping\Strategies;
+namespace App\services\Scraping\Strategies;
 
 use App\Models\OpportunitySource;
 use App\Models\ScrapingRun;
-use App\Services\Scraping\AbstractScraper;
+use App\services\Scraping\AbstractScraper;
 use Illuminate\Support\Facades\Http;
 
 class DefaultScraperStrategy extends AbstractScraper

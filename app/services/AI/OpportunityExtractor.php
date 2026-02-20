@@ -2,9 +2,9 @@
 
 
 
-namespace App\Services\AI;
+namespace App\services\AI;
 
-use App\Services\GeminiService;
+use App\services\GeminiService;
 use Carbon\Carbon;
 
 class OpportunityExtractor

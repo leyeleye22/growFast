@@ -4,7 +4,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\GeminiService;
+use App\services\GeminiService;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

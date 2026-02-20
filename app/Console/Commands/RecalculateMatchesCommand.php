@@ -6,8 +6,8 @@ namespace App\Console\Commands;
 
 use App\Mail\MatchesRecalculatedMail;
 use App\Models\Startup;
-use App\Services\NotificationService;
-use App\Services\OpportunityMatchingService;
+use App\services\NotificationService;
+use App\services\OpportunityMatchingService;
 use Illuminate\Console\Command;
 
 class RecalculateMatchesCommand extends Command

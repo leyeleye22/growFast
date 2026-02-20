@@ -2,7 +2,7 @@
 
 
 
-namespace App\Services\Scraping;
+namespace App\services\Scraping;
 
 use App\Models\OpportunitySource;
 use App\Models\ScrapedEntry;

@@ -2,7 +2,7 @@
 
 
 
-namespace App\Services;
+namespace App\services;
 
 use App\Models\User;
 use Illuminate\Contracts\Mail\Mailable;

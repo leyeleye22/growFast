@@ -9,7 +9,7 @@ use App\Mail\UserSubscribedMail;
 use App\Mail\UserSubscriptionCancelledMail;
 use App\Models\Subscription;
 use App\Models\UserSubscription;
-use App\Services\NotificationService;
+use App\services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Throwable;

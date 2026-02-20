@@ -2,12 +2,12 @@
 
 
 
-namespace App\Services\Scraping;
+namespace App\services\Scraping;
 
 use App\Enums\ScrapingRunStatus;
 use App\Models\OpportunitySource;
 use App\Models\ScrapingRun;
-use App\Services\Scraping\Strategies\DefaultScraperStrategy;
+use App\services\Scraping\Strategies\DefaultScraperStrategy;
 use Illuminate\Support\Str;
 
 class ScraperManager

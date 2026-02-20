@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\services;
 
 use GuzzleHttp\Client;
 use Illuminate\Http\UploadedFile;
