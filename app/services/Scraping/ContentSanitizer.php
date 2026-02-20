@@ -70,44 +70,48 @@ class ContentSanitizer
      */
     protected function extractMainContent(string $html): string
     {
-        $html = $this->ensureUtf8($html);
+        try {
+            $html = $this->ensureUtf8($html);
 
-        libxml_use_internal_errors(true);
-        $dom = new \DOMDocument;
-        $loaded = @$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-        libxml_clear_errors();
+            libxml_use_internal_errors(true);
+            $dom = new \DOMDocument;
+            $loaded = @$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+            libxml_clear_errors();
 
-        if (! $loaded || ! $dom->documentElement) {
-            return '';
-        }
+            if (! $loaded || ! $dom->documentElement) {
+                return '';
+            }
 
-        $xpath = new \DOMXPath($dom);
+            $xpath = new \DOMXPath($dom);
 
-        foreach ($this->mainContentSelectors as $selector) {
-            $nodes = $this->querySelector($xpath, $selector);
-            foreach ($nodes as $node) {
-                $text = $this->getTextContent($node);
-                if (strlen($text) >= 100) {
+            foreach ($this->mainContentSelectors as $selector) {
+                $nodes = $this->querySelector($xpath, $selector);
+                foreach ($nodes as $node) {
+                    $text = $this->getTextContent($node);
+                    if (strlen($text) >= 100) {
+                        return $text;
+                    }
+                }
+            }
+
+            // Fallback: first div with substantial content
+            $divs = $dom->getElementsByTagName('div');
+            foreach ($divs as $div) {
+                $text = $this->getTextContent($div);
+                if (strlen($text) >= 200) {
                     return $text;
                 }
             }
-        }
 
-        // Fallback: first div with substantial content
-        $divs = $dom->getElementsByTagName('div');
-        foreach ($divs as $div) {
-            $text = $this->getTextContent($div);
-            if (strlen($text) >= 200) {
-                return $text;
+            // Last resort: body or document
+            $body = $dom->getElementsByTagName('body')->item(0);
+            if ($body) {
+                return $this->getTextContent($body);
             }
+            return $this->getTextContent($dom->documentElement);
+        } catch (\Throwable $e) {
+            return '';
         }
-
-        // Last resort: body or document
-        $body = $dom->getElementsByTagName('body')->item(0);
-        if ($body) {
-            return $this->getTextContent($body);
-        }
-        return $this->getTextContent($dom->documentElement);
     }
 
     protected function querySelector(\DOMXPath $xpath, string $selector): \DOMNodeList
@@ -221,7 +225,10 @@ class ContentSanitizer
         if (! $host) {
             return false;
         }
-        $blacklist = config('scraping.blacklist', []);
+        $blacklist = config('scraping.blacklist') ?? [];
+        if (! is_array($blacklist)) {
+            return false;
+        }
         foreach ($blacklist as $pattern) {
             if (str_contains($host, $pattern) || fnmatch($pattern, $host)) {
                 return true;
