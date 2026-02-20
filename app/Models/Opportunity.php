@@ -57,7 +57,10 @@ class Opportunity extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', OpportunityStatus::Active);
+        return $query->whereIn('status', [
+        OpportunityStatus::Active->value,
+        OpportunityStatus::Pending->value,
+    ]);
     }
 
     public function scopeNotExpired(Builder $query): Builder

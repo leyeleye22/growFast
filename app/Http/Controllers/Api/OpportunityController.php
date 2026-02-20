@@ -16,12 +16,7 @@ class OpportunityController extends Controller
     {
         try {
             Log::info('[GET] OpportunityController@index');
-            dd([
-    'all' => Opportunity::withoutGlobalScopes()->count(),
-    'not_expired_scope' => Opportunity::count(),
-    'active' => Opportunity::withoutGlobalScopes()->active()->count(),
-]);
-            $opportunities = Opportunity::active()
+          $opportunities = Opportunity::active()
                 ->with(['industries', 'stages'])
                 ->get();
             Log::info('Opportunities listed', ['count' => $opportunities->count()]);
