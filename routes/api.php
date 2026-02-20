@@ -52,6 +52,7 @@ Route::middleware('auth:api')->get('/user', function (\Illuminate\Http\Request $
 Route::middleware('auth:api')->prefix('opportunities')->group(function (): void {
     Route::get('/', [OpportunityController::class, 'index']);
     Route::get('/{opportunity}', [OpportunityController::class, 'show']);
+    Route::post('/{opportunity}/ask', [OpportunityController::class, 'ask']);
     Route::post('/', [OpportunityController::class, 'store'])->middleware('can:manage_opportunities');
     Route::put('/{opportunity}', [OpportunityController::class, 'update'])->middleware('can:manage_opportunities');
     Route::delete('/{opportunity}', [OpportunityController::class, 'destroy'])->middleware('can:manage_opportunities');

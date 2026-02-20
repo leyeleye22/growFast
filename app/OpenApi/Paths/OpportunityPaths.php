@@ -47,6 +47,31 @@ use OpenApi\Attributes as OAT;
     put: new OAT\Put(operationId: 'opportunitiesUpdate', summary: 'Modifier', tags: ['Opportunities'], description: 'manage_opportunities', responses: [new OAT\Response(response: 200, description: 'OK')]),
     delete: new OAT\Delete(operationId: 'opportunitiesDestroy', summary: 'Supprimer', tags: ['Opportunities'], description: 'manage_opportunities', responses: [new OAT\Response(response: 204, description: 'No content')]),
 )]
+#[OAT\PathItem(
+    path: '/opportunities/{id}/ask',
+    post: new OAT\Post(
+        operationId: 'opportunitiesAsk',
+        summary: 'Ask Gemini a question about an opportunity',
+        tags: ['Opportunities'],
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                required: ['question'],
+                properties: [
+                    new OAT\Property(property: 'question', type: 'string', example: 'What is the deadline?'),
+                ]
+            )
+        ),
+        responses: [
+            new OAT\Response(response: 200, description: 'OK', content: new OAT\JsonContent(properties: [
+                new OAT\Property(property: 'answer', type: 'string'),
+                new OAT\Property(property: 'question', type: 'string'),
+            ])),
+            new OAT\Response(response: 400, description: 'Question required'),
+            new OAT\Response(response: 503, description: 'Gemini not configured'),
+        ]
+    )
+)]
 class OpportunityPaths
 {
 }

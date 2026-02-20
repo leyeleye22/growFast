@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\services\AI\OpportunityExtractor;
 use App\services\GeminiService;
+use App\services\Scraping\ContentSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -43,8 +44,7 @@ class ScrapingController extends Controller
         $externalUrl = null;
 
         if ($url !== '') {
-            $cacheBuster = str_contains($url, '?') ? '&_=' . time() : '?_=' . time();
-            $response = Http::timeout(30)->get($url . $cacheBuster);
+            $response = Http::timeout(30)->get($url);
             if (! $response->successful()) {
                 return response()->json(['message' => 'Unable to fetch URL.'], 400);
             }
@@ -72,6 +72,12 @@ class ScrapingController extends Controller
             $data['external_url'] = $externalUrl;
         }
 
+        $gemini = app(GeminiService::class);
+        if ($gemini->isConfigured() && ! empty($data['title'])) {
+            $cleaned = $gemini->cleanOpportunities([$data]);
+            $data = $cleaned[0] ?? $data;
+        }
+
         return response()->json($data);
     }
 
@@ -87,7 +93,9 @@ class ScrapingController extends Controller
         }
 
         $gemini = app(GeminiService::class);
+        $sanitizer = app(ContentSanitizer::class);
         $urls = $gemini->searchOpportunityUrls($query);
+        $urls = array_values(array_filter($urls, fn (string $u) => ! $sanitizer->isBlacklisted($u)));
 
         if (empty($urls)) {
             return response()->json([
@@ -98,22 +106,32 @@ class ScrapingController extends Controller
 
         $extractor = app(OpportunityExtractor::class);
         $opportunities = [];
+        $seen = [];
 
         foreach ($urls as $url) {
             try {
-                $cacheBuster = str_contains($url, '?') ? '&_=' . time() : '?_=' . time();
-                $response = Http::timeout(30)->get($url . $cacheBuster);
+                $response = Http::timeout(30)->get($url);
                 if (! $response->successful()) {
                     continue;
                 }
                 $content = $response->body();
                 $extracted = $extractor->extractForTest($content);
                 if (! empty($extracted['title'])) {
-                    $opportunities[] = array_merge($extracted, ['external_url' => $url]);
+                    $merged = array_merge($extracted, ['external_url' => $url]);
+                    $titleNorm = strtolower(trim($merged['title'] ?? ''));
+                    if ($titleNorm !== '' && ! isset($seen[$titleNorm])) {
+                        $seen[$titleNorm] = true;
+                        $opportunities[] = $merged;
+                    }
                 }
             } catch (Throwable $e) {
                 Log::warning('Fetch URL failed', ['url' => $url, 'error' => $e->getMessage()]);
             }
+        }
+
+        if (! empty($opportunities) && $gemini->isConfigured()) {
+            $opportunities = $gemini->filterRelevantOpportunities($query, $opportunities);
+            $opportunities = $gemini->cleanOpportunities($opportunities);
         }
 
         return response()->json([

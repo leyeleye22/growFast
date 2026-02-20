@@ -1,21 +1,23 @@
 <?php
 
-
-
 namespace App\services\AI;
 
 use App\services\GeminiService;
+use App\services\Scraping\ContentSanitizer;
 use Carbon\Carbon;
 
 class OpportunityExtractor
 {
     public function __construct(
-        protected GeminiService $geminiService
+        protected GeminiService $geminiService,
+        protected ContentSanitizer $contentSanitizer
     ) {}
 
     public function extract(string $rawContent): ?array
     {
-        $extracted = $this->callAI($rawContent);
+        $content = $this->contentSanitizer->sanitize($rawContent);
+        $content = strlen($content) >= 50 ? $content : $rawContent;
+        $extracted = $this->callAI($content);
 
         if (!$extracted) {
             return null;
@@ -34,20 +36,23 @@ class OpportunityExtractor
      */
     public function extractForTest(string $rawContent): array
     {
-        $extracted = $this->callAI($rawContent);
+        $content = $this->contentSanitizer->sanitize($rawContent);
+        $content = strlen($content) >= 50 ? $content : $rawContent;
+        $extracted = $this->callAI($content);
 
         if (!$extracted) {
-            return [
-                'title' => null,
-                'description' => null,
-                'funding_type' => null,
-                'deadline' => null,
-                'industry' => null,
-                'stage' => null,
-                'funding_min' => null,
-                'funding_max' => null,
-                'source' => 'none',
-            ];
+        return [
+            'title' => null,
+            'description' => null,
+            'funding_type' => null,
+            'deadline' => null,
+            'industry' => null,
+            'stage' => null,
+            'country' => null,
+            'funding_min' => null,
+            'funding_max' => null,
+            'source' => 'none',
+        ];
         }
 
         return array_merge($this->normalizeExtracted($extracted), [
@@ -66,6 +71,7 @@ class OpportunityExtractor
             'deadline' => $deadline,
             'industry' => $this->sanitizeText($extracted['industry'] ?? null),
             'stage' => $extracted['stage'] ?? null,
+            'country' => $this->sanitizeText($extracted['country'] ?? null),
             'funding_min' => $this->parseFundingAmount($extracted['funding_min'] ?? null),
             'funding_max' => $this->parseFundingAmount($extracted['funding_max'] ?? null),
         ];
@@ -108,6 +114,7 @@ class OpportunityExtractor
             'deadline' => $this->extractDeadline($content),
             'industry' => null,
             'stage' => null,
+            'country' => null,
             'funding_min' => $this->extractFundingMin($content),
             'funding_max' => $this->extractFundingMax($content),
         ];
@@ -121,14 +128,17 @@ class OpportunityExtractor
         if (preg_match('/<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']description["\']/i', $content, $m)) {
             return $this->sanitizeText($m[1]);
         }
-        if (preg_match('/<p[^>]*>([^<]{50,500})<\/p>/i', $content, $m)) {
+        if (preg_match('/<p[^>]*>([^<]{50,1500})<\/p>/i', $content, $m)) {
             return $this->sanitizeText($m[1]);
+        }
+        if (preg_match('/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]{100,2000})<\/div>/i', $content, $m)) {
+            return $this->sanitizeText(strip_tags($m[1]));
         }
         $text = strip_tags($content);
         $text = preg_replace('/\s+/', ' ', $text);
         $text = trim($text);
         if (strlen($text) > 100) {
-            return $this->sanitizeText(mb_substr($text, 0, 500) . '...');
+            return $this->sanitizeText(mb_substr($text, 0, 1500));
         }
         return null;
     }

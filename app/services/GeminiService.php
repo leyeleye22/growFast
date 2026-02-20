@@ -4,6 +4,7 @@
 
 namespace App\services;
 
+use App\Models\Opportunity;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,44 @@ class GeminiService
     public function isConfigured(): bool
     {
         return $this->apiKey !== '';
+    }
+
+    /**
+     * Answer a user question about an opportunity using Gemini.
+     */
+    public function askAboutOpportunity(Opportunity $opportunity, string $question): ?string
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $context = [
+            'title' => $opportunity->title,
+            'description' => $opportunity->description,
+            'funding_type' => $opportunity->funding_type,
+            'deadline' => $opportunity->deadline?->format('Y-m-d'),
+            'funding_min' => $opportunity->funding_min,
+            'funding_max' => $opportunity->funding_max,
+            'external_url' => $opportunity->external_url,
+            'eligibility_criteria' => $opportunity->eligibility_criteria,
+        ];
+
+        $contextStr = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $prompt = <<<PROMPT
+You are an assistant helping users understand funding opportunities. You have the following opportunity data:
+
+{$contextStr}
+
+The user asks: {$question}
+
+Answer concisely and helpfully based only on the opportunity data above. If the information is not in the data, say so. Be clear and practical.
+PROMPT;
+
+        return $this->generateContent($prompt, [
+            'temperature' => 0.7,
+            'maxOutputTokens' => 1024,
+        ]);
     }
 
     public function generateContent(string $prompt, array $options = []): ?string
@@ -91,23 +130,33 @@ class GeminiService
             $urls = $this->getQuerySpecificUrls($normalized);
         }
 
-        return array_values(array_unique(array_slice($urls, 0, 15)));
+        $urls = array_values(array_unique(array_slice($urls, 0, 20)));
+        shuffle($urls);
+
+        return $urls;
     }
 
     /**
      * Use Gemini to expand short/vague queries into better search terms.
+     * Respects query intent: only add hackathon if user asked for it.
      */
     private function expandQueryWithGemini(string $query): ?string
     {
-        if (str_word_count($query) >= 5) {
+        if (str_word_count($query) >= 6) {
             return null;
         }
 
         $prompt = <<<PROMPT
-Rewrite this search query for finding funding opportunities (grants, hackathons, prizes, equity) into a more effective web search. Keep it concise (5-12 words). Fix typos. Add relevant keywords.
+Rewrite this search query for finding funding opportunities into a more effective web search. Keep it concise (5-12 words). Fix typos.
+
+RULES:
+- If the user says "opportunities" or "grants" or a country (Ghana, Senegal, etc.): focus on grants, funding, accelerators, NOT hackathons.
+- Only add "hackathon" if the user explicitly asks for hackathons.
+- Preserve country/region and sector (tech, health, etc.) from the original query.
+- Output: Only the rewritten query, nothing else. No quotes, no explanation.
 
 Input: "{$query}"
-Output: Only the rewritten query, nothing else. No quotes, no explanation.
+Output:
 PROMPT;
 
         $result = $this->generateContent($prompt, [
@@ -136,12 +185,14 @@ PROMPT;
 
     /**
      * Query-specific URLs when Gemini returns nothing. Matches query keywords.
+     * For "opportunities" + country: grants, funding. NO hackathon by default.
      *
      * @return array<string>
      */
     private function getQuerySpecificUrls(string $query): array
     {
         $lower = strtolower($query);
+
         if (str_contains($lower, 'hackathon')) {
             return [
                 'https://devpost.com/hackathons',
@@ -150,20 +201,79 @@ PROMPT;
                 'https://www.eventbrite.com/d/online/hackathon/',
             ];
         }
+
+        $countryUrls = $this->getCountrySpecificUrls($lower);
+        if (! empty($countryUrls)) {
+            return $countryUrls;
+        }
+
         if (str_contains($lower, 'grant') || str_contains($lower, 'subvention')) {
             return [
                 'https://www.f6s.com/opportunities',
                 'https://www.fundsforngos.org/',
                 'https://www.grantwatch.com/',
                 'https://opportunitydesk.org/',
+                'https://vc4a.com/opportunities/',
             ];
         }
-        return [
+
+        $base = [
             'https://www.f6s.com/opportunities',
-            'https://devpost.com/hackathons',
-            'https://opportunitydesk.org/',
             'https://vc4a.com/opportunities/',
+            'https://opportunitydesk.org/',
+            'https://www.africanbusinesscentral.com/grants/',
+            'https://www.fundsforngos.org/',
+            'https://www.grantwatch.com/',
+            'https://www.crunchbase.com/organizations',
         ];
+        $q = urlencode($query);
+        return array_merge($base, [
+            'https://www.f6s.com/opportunities?q=' . $q,
+            'https://opportunitydesk.org/?s=' . $q,
+        ]);
+    }
+
+    /**
+     * Country-specific URLs for grants and funding (no hackathons).
+     *
+     * @return array<string>
+     */
+    private function getCountrySpecificUrls(string $query): array
+    {
+        $base = [
+            'https://www.f6s.com/opportunities',
+            'https://vc4a.com/opportunities/',
+            'https://opportunitydesk.org/',
+        ];
+
+        if (str_contains($query, 'ghana')) {
+            return array_merge($base, [
+                'https://www.africanbusinesscentral.com/grants/ghana/',
+                'https://www.fundsforngos.org/africa/ghana/',
+                'https://www.grantwatch.com/cat/12/ghana-grants.html',
+            ]);
+        }
+        if (str_contains($query, 'senegal') || str_contains($query, 'sénégal')) {
+            return array_merge($base, [
+                'https://www.africanbusinesscentral.com/grants/senegal/',
+                'https://www.fundsforngos.org/africa/senegal/',
+            ]);
+        }
+        if (str_contains($query, 'nigeria')) {
+            return array_merge($base, [
+                'https://www.africanbusinesscentral.com/grants/nigeria/',
+                'https://www.fundsforngos.org/africa/nigeria/',
+            ]);
+        }
+        if (str_contains($query, 'africa') || str_contains($query, 'afrique')) {
+            return array_merge($base, [
+                'https://www.africanbusinesscentral.com/grants/',
+                'https://www.fundsforngos.org/africa/',
+                'https://www.youngafricanleaders.gov/',
+            ]);
+        }
+
+        return [];
     }
 
     /**
@@ -174,27 +284,29 @@ PROMPT;
     private function searchWithGrounding(string $query): array
     {
         $prompt = <<<PROMPT
-Find web page URLs that list funding opportunities (grants, hackathons, prizes, equity, competitions) for: {$query}
+Find web page URLs that list REAL funding opportunities for: {$query}
 
-Return a JSON array of 10-15 URLs. Include: Devpost, F6S, hackathon.com, Crunchbase, government portals, aggregators.
-Only valid https URLs. Example: ["https://devpost.com/hackathons", "https://..."]
+CRITICAL RULES:
+- For "opportunities" + country (e.g. Ghana, Senegal): prioritize grants, accelerators, government funding, VC4A, F6S, country-specific portals. NO generic hackathon listings unless the user asked for hackathons.
+- For "tech" + country: tech grants, tech accelerators, innovation funds in that country.
+- Exclude: generic pitch competitions, hackathon aggregators (Devpost, hackathon.com) unless the query explicitly asks for hackathons.
+- Prefer: pages that list actual opportunities with deadlines and amounts, not marketing or event listings.
+- Return 10-15 valid https URLs as JSON array. VARY the results: include different aggregators, country-specific pages, individual opportunity pages - NOT always the same 2-3 sites.
 PROMPT;
 
         $payload = [
             'contents' => [['parts' => [['text' => $prompt]]]],
             'tools' => [['google_search' => (object) []]],
             'generationConfig' => [
-                'temperature' => 0.4,
+                'temperature' => 0.7,
                 'maxOutputTokens' => 2048,
                 'responseMimeType' => 'application/json',
             ],
         ];
 
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'Cache-Control' => 'no-cache, no-store',
-            'Pragma' => 'no-cache',
-        ])->timeout(60)->post($this->buildUrl(), $payload);
+        $response = Http::withHeaders(['Content-Type' => 'application/json'])
+            ->timeout(60)
+            ->post($this->buildUrl(), $payload);
 
         if (! $response->ok()) {
             Log::warning('Gemini grounding error', [
@@ -235,16 +347,19 @@ PROMPT;
     private function searchFromKnowledge(string $query): array
     {
         $prompt = <<<PROMPT
-You know funding opportunity websites. Return a JSON array of URLs that list opportunities matching: {$query}
+You know funding opportunity websites. Return a JSON array of URLs matching: {$query}
 
-Sites: Devpost (hackathons), F6S, Crunchbase, hackathon.com, MLH, fundsforngos, VC4A, government grant portals, Eventbrite.
-Return 8-15 URLs as JSON array. Only https. Example: ["https://devpost.com/hackathons", "https://..."]
+RULES:
+- For "opportunities" + country (Ghana, Senegal, Nigeria, etc.): VC4A, F6S, fundsforngos, country government grant portals, African Business Central, opportunity aggregators. NO hackathon sites unless the user asked for hackathons.
+- For tech + country: tech grants, accelerators, innovation funds.
+- Exclude: Devpost, hackathon.com, MLH, Eventbrite hackathons unless the query explicitly mentions hackathons.
+- Return 8-15 valid https URLs as JSON array. VARY the sources - different sites, not always the same 2.
 PROMPT;
 
         $payload = [
             'contents' => [['parts' => [['text' => $prompt]]]],
             'generationConfig' => [
-                'temperature' => 0.4,
+                'temperature' => 0.7,
                 'maxOutputTokens' => 2048,
                 'responseMimeType' => 'application/json',
             ],
@@ -344,32 +459,140 @@ PROMPT;
             return null;
         }
 
-        $truncated = strlen($rawContent) > 12000 ? substr($rawContent, 0, 12000) . '...[truncated]' : $rawContent;
+        $truncated = strlen($rawContent) > 15000 ? substr($rawContent, 0, 15000) . '...[truncated]' : $rawContent;
 
         $prompt = <<<PROMPT
-You are given raw HTML or text from a webpage about a funding opportunity. Your task is to extract and return ONLY the main content relevant to the opportunity.
+You are given raw HTML or text from a webpage about a funding opportunity. Extract and return ONLY the main content.
 
-Remove:
-- Navigation menus, headers, footers
-- Ads, scripts, style tags
-- Sidebars, cookie banners
-- Duplicate or irrelevant text
+Remove: navigation, ads, scripts, footers, cookie banners.
 
-Keep:
-- Title and headings
-- Description of the opportunity
-- Funding amounts, deadlines, eligibility
-- Key dates and requirements
+Keep EVERYTHING relevant: full description, what the opportunity is, who organizes it, who can apply, eligibility criteria, funding amounts, deadlines, how to apply, requirements. Do NOT truncate.
 
-Return ONLY the cleaned content as plain text. No explanations, no markdown. Preserve the structure of important information.
+Return ONLY the cleaned content as plain text. No explanations. Preserve all important details.
 PROMPT;
 
         $prompt .= "\n\nContent to preprocess:\n{$truncated}";
 
         return $this->generateContent($prompt, [
             'temperature' => 0.1,
-            'maxOutputTokens' => 4096,
+            'maxOutputTokens' => 8192,
         ]);
+    }
+
+    /**
+     * Filter out opportunities that don't match the user query.
+     * For "opportunities tech Ghana": remove hackathons, pitch competitions.
+     * For "hackathon": keep hackathon-related only.
+     *
+     * @param  array<int, array<string, mixed>>  $opportunities
+     * @return array<int, array<string, mixed>>
+     */
+    public function filterRelevantOpportunities(string $query, array $opportunities): array
+    {
+        if (empty($opportunities) || count($opportunities) <= 2) {
+            return $opportunities;
+        }
+
+        $lower = strtolower($query);
+        $wantsHackathon = str_contains($lower, 'hackathon');
+        $wantsGrantsOrOpportunities = str_contains($lower, 'grant') || str_contains($lower, 'opportunit')
+            || str_contains($lower, 'subvention') || preg_match('/\b(tech|ghana|senegal|nigeria|africa)\b/', $lower);
+
+        $filtered = [];
+        foreach ($opportunities as $opp) {
+            $title = strtolower($opp['title'] ?? '');
+            $desc = strtolower($opp['description'] ?? '');
+
+            if ($wantsHackathon) {
+                $filtered[] = $opp;
+                continue;
+            }
+
+            if ($wantsGrantsOrOpportunities) {
+                if (str_contains($title, 'hackathon') && ! str_contains($desc, 'grant') && ! str_contains($desc, 'funding')) {
+                    continue;
+                }
+                if (str_contains($title, 'pitch') && ! str_contains($desc, 'grant') && ! str_contains($desc, 'funding') && ! str_contains($desc, 'prize')) {
+                    continue;
+                }
+            }
+
+            $filtered[] = $opp;
+        }
+
+        return ! empty($filtered) ? $filtered : $opportunities;
+    }
+
+    /**
+     * Clean scraped opportunity data via Gemini: decode entities, fix formatting, normalize.
+     *
+     * @param  array<int, array<string, mixed>>  $opportunities
+     * @return array<int, array<string, mixed>>
+     */
+    public function cleanOpportunities(array $opportunities): array
+    {
+        if (! $this->isConfigured() || empty($opportunities)) {
+            return $opportunities;
+        }
+
+        $json = json_encode($opportunities, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (strlen($json) > 28000) {
+            $json = substr($json, 0, 28000) . '...[truncated]';
+        }
+
+        $prompt = <<<'PROMPT'
+You receive scraped funding opportunity data. Clean and normalize it. Return a JSON array of objects with the same structure.
+
+## CLEANING RULES
+
+1. **title**: Decode HTML entities (&#8211;→-, &amp;→&, &#039;→'). Remove site names (e.g. "SiteName – "). Keep only the opportunity name. Plain text.
+2. **description**: Decode HTML entities. MINIMUM 10 lines (500+ chars). Include: what it is, organizer, eligibility, benefits, dates, how to apply. If vague or truncated, expand from context. Never output less than 10 lines.
+3. **funding_type**: Must be exactly: grant | equity | debt | prize | other. Normalize variations.
+4. **deadline**: YYYY-MM-DD format. Parse French dates. null if absent or invalid.
+5. **funding_min / funding_max**: Numbers only. 10k→10000, 1M→1000000. null if unknown.
+6. **external_url**: Keep unchanged.
+7. **source**: Keep unchanged.
+
+Return ONLY the JSON array. No markdown, no explanation. Same number of objects as input.
+
+## Input data
+
+PROMPT;
+
+        $prompt .= "\n\n{$json}";
+
+        $text = $this->generateContent($prompt, [
+            'temperature' => 0.1,
+            'maxOutputTokens' => 8192,
+            'generationConfig' => ['responseMimeType' => 'application/json'],
+        ]);
+
+        if (! $text) {
+            return $opportunities;
+        }
+
+        $decoded = json_decode(trim($text), true);
+        if (! is_array($decoded)) {
+            return $opportunities;
+        }
+
+        $cleaned = [];
+        foreach ($decoded as $i => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $original = $opportunities[$i] ?? [];
+            $cleaned[] = array_merge($original, [
+                'title' => $item['title'] ?? $original['title'] ?? null,
+                'description' => $item['description'] ?? $original['description'] ?? null,
+                'funding_type' => $item['funding_type'] ?? $original['funding_type'] ?? null,
+                'deadline' => $item['deadline'] ?? $original['deadline'] ?? null,
+                'funding_min' => $item['funding_min'] ?? $original['funding_min'] ?? null,
+                'funding_max' => $item['funding_max'] ?? $original['funding_max'] ?? null,
+            ]);
+        }
+
+        return ! empty($cleaned) ? $cleaned : $opportunities;
     }
 
     public function extractOpportunityFromContent(string $rawContent): ?array
@@ -380,7 +603,7 @@ PROMPT;
         $prompt = $this->buildOpportunityExtractionPrompt($contentToExtract);
         $text = $this->generateContent($prompt, [
             'temperature' => 0.2,
-            'maxOutputTokens' => 4096,
+            'maxOutputTokens' => 8192,
             'generationConfig' => array_merge(
                 ['responseMimeType' => 'application/json'],
                 $this->getExtractionResponseSchema(),
@@ -413,7 +636,7 @@ PROMPT;
                     ],
                     'description' => [
                         'type' => 'STRING',
-                        'description' => 'REQUIRED. Full description: location, organizer, purpose, eligibility, dates. 500-2500 chars. Be thorough. For hackathons: location, organizer, date range, objectives, how to participate.',
+                        'description' => 'REQUIRED. MINIMUM 10 lines (500+ chars). Include: what it is, organizer, who can apply, eligibility, benefits, dates, how to apply. Never truncate. Be specific.',
                     ],
                     'funding_type' => [
                         'type' => 'STRING',
@@ -430,6 +653,10 @@ PROMPT;
                     'stage' => [
                         'type' => 'STRING',
                         'description' => 'seed, series-a, growth, or null',
+                    ],
+                    'country' => [
+                        'type' => 'STRING',
+                        'description' => 'ISO 3166-1 alpha-2 code (e.g. GH, SN, NG, US, FR) or country name. null if unknown.',
                     ],
                     'funding_min' => [
                         'type' => 'NUMBER',
@@ -452,7 +679,7 @@ PROMPT;
 
     private function buildOpportunityExtractionPrompt(string $rawContent): string
     {
-        $truncated = strlen($rawContent) > 12000 ? substr($rawContent, 0, 12000) . '...[truncated]' : $rawContent;
+        $truncated = strlen($rawContent) > 18000 ? substr($rawContent, 0, 18000) . '...[truncated]' : $rawContent;
 
         return <<<'PROMPT'
 Extract funding opportunity data. Return ONLY valid JSON matching this schema (see docs/gemini-opportunity-schema.md):
@@ -467,6 +694,7 @@ Extract funding opportunity data. Return ONLY valid JSON matching this schema (s
   "deadline": "string | null",
   "industry": "string | null",
   "stage": "string | null",
+  "country": "string | null",
   "funding_min": number | null,
   "funding_max": number | null
 }
@@ -477,10 +705,11 @@ Extract funding opportunity data. Return ONLY valid JSON matching this schema (s
 | Field | Content |
 |-------|---------|
 | **title** | Event/opportunity name only (e.g. "GOVATHON 2025"). No site name, no logo text. |
-| **description** | REQUIRED. Full text: location, organizer, purpose, eligibility, dates. 500-2500 chars. Be thorough. |
+| **description** | REQUIRED. MIN 10 lines (500+ chars). Include: what it is, organizer, eligibility, benefits, dates, how to apply. Never truncate. |
 | **funding_type** | grant | equity | debt | prize | other. Hackathons/competitions → prize. |
 | **deadline** | YYYY-MM-DD. For "Du 1 oct 2025 au 30 avr 2026" use end date: 2026-04-30. French months: janv, févr, mars, avr, mai, juin, juil, août, sept, oct, nov, déc. |
 | **funding_min/max** | Number. 10k→10000, 1M→1000000. null if unknown. |
+| **country** | ISO code (GH, SN, NG, US, FR) or country name. null if unknown. |
 
 ## RULES
 

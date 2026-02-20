@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOpportunityRequest;
 use App\Http\Requests\UpdateOpportunityRequest;
 use App\Models\Opportunity;
+use App\services\GeminiService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -76,5 +78,32 @@ class OpportunityController extends Controller
             Log::error('OpportunityController@destroy failed', ['exception' => $e]);
             throw $e;
         }
+    }
+
+    /**
+     * Ask Gemini a question about an opportunity.
+     * POST body: { "question": "What is the deadline?" }
+     */
+    public function ask(Request $request, Opportunity $opportunity): JsonResponse
+    {
+        $question = trim((string) $request->input('question', ''));
+        if ($question === '') {
+            return response()->json(['message' => 'Question is required.'], 400);
+        }
+
+        $gemini = app(GeminiService::class);
+        $answer = $gemini->askAboutOpportunity($opportunity, $question);
+
+        if ($answer === null) {
+            return response()->json([
+                'message' => 'Gemini is not configured or could not generate an answer.',
+                'answer' => null,
+            ], 503);
+        }
+
+        return response()->json([
+            'answer' => $answer,
+            'question' => $question,
+        ]);
     }
 }

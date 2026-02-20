@@ -9,6 +9,7 @@ use App\Models\OpportunitySource;
 use App\Models\ScrapedEntry;
 use App\Models\ScrapingRun;
 use App\services\AI\OpportunityExtractor;
+use App\services\Scraping\OpportunityDataMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -102,7 +103,7 @@ class ScrapingTest extends TestCase
         $this->app->instance(OpportunityExtractor::class, $extractor);
 
         $job = new ProcessScrapedEntryJob($entry);
-        $job->handle(app(OpportunityExtractor::class));
+        $job->handle(app(OpportunityExtractor::class), app(OpportunityDataMapper::class));
 
         $entry->refresh();
         $this->assertTrue($entry->processed);

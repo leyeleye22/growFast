@@ -6,6 +6,7 @@ use App\Enums\OpportunityStatus;
 use App\Filament\Resources\OpportunityResource;
 use App\Http\Controllers\Api\ScrapingController;
 use App\Models\Opportunity;
+use App\services\Scraping\OpportunityDataMapper;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -72,11 +73,11 @@ class CreateOpportunity extends CreateRecord
             ->schema(is_array($current) ? $current : []);
 
         $recuperationSection = Section::make('Fetch via Gemini')
-            ->description('Describe the opportunities you are looking for. AI finds URLs, extracts data and shows a popup: validate to save.')
+            ->description('Describe the opportunities you are looking for. AI finds URLs, extracts data, cleans it with Gemini, then shows a popup: validate to save.')
             ->schema([
                 Textarea::make('query')
                     ->label('Search criteria')
-                    ->placeholder('e.g. tech opportunities November $200,000 Senegal')
+                    ->placeholder('e.g. opportunities tech Ghana, grants Senegal, hackathons 2025')
                     ->rows(3)
                     ->dehydrated(false)
                     ->columnSpanFull(),
@@ -109,6 +110,12 @@ class CreateOpportunity extends CreateRecord
 
             return;
         }
+
+        Notification::make()
+            ->info()
+            ->title('Please wait')
+            ->body('Gemini is searching and cleaning the data. This may take a minute.')
+            ->send();
 
         $request = Request::create('/api/scraping/fetch', 'POST', ['query' => $query]);
         $request->setUserResolver(fn () => Auth::user());
@@ -166,7 +173,7 @@ class CreateOpportunity extends CreateRecord
             return;
         }
 
-        Opportunity::create($this->mapToOpportunityData($opp));
+        $this->createOpportunityFromExtracted($opp);
         $this->removeExtractedAtIndex($index);
         Notification::make()->success()->title('Opportunity saved.')->send();
     }
@@ -193,7 +200,7 @@ class CreateOpportunity extends CreateRecord
                 $skipped++;
                 continue;
             }
-            Opportunity::create($this->mapToOpportunityData($data));
+            $this->createOpportunityFromExtracted($data);
             $saved++;
         }
         $this->extractedOpportunities = [];
@@ -231,22 +238,34 @@ class CreateOpportunity extends CreateRecord
     }
 
     /**
+     * Create opportunity from extracted data and sync industry/stage/country.
+     *
      * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
      */
-    private function mapToOpportunityData(array $data): array
+    private function createOpportunityFromExtracted(array $data): void
     {
-        return [
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'funding_type' => $data['funding_type'] ?? null,
-            'deadline' => $data['deadline'] ?? null,
-            'funding_min' => $data['funding_min'] ?? null,
-            'funding_max' => $data['funding_max'] ?? null,
-            'status' => OpportunityStatus::Pending,
-            'external_url' => $data['external_url'] ?? null,
-            'source' => $data['source'] ?? 'scraper',
-        ];
+        $mapper = app(OpportunityDataMapper::class);
+        $attributes = $mapper->toOpportunityAttributes($data);
+        $attributes['status'] = OpportunityStatus::Pending;
+
+        $opportunity = Opportunity::create($attributes);
+
+        $industryIds = $mapper->resolveIndustryIds($data['industry'] ?? null);
+        if (! empty($industryIds)) {
+            $opportunity->industries()->sync($industryIds);
+        }
+
+        $stageIds = $mapper->resolveStageIds($data['stage'] ?? null);
+        if (! empty($stageIds)) {
+            $opportunity->stages()->sync($stageIds);
+        }
+
+        $countryCodes = $mapper->resolveCountryCodes($data['country'] ?? null);
+        if (! empty($countryCodes)) {
+            foreach ($countryCodes as $code) {
+                $opportunity->countryCodes()->create(['country_code' => $code]);
+            }
+        }
     }
 
     private function removeExtractedAtIndex(int $index): void
