@@ -318,7 +318,7 @@ La documentation interactive de l'API est disponible via **Swagger UI** (L5-Swag
 
 | URL | Description |
 |-----|-------------|
-| `/api/documentation` | Interface Swagger UI |
+| `/api/swagger-ui` | Interface Swagger UI |
 
 **Génération des docs** :
 ```bash

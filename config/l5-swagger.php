@@ -1,7 +1,12 @@
 <?php
 
 return [
-    'default' => 'default',
+    /*
+     * Default documentation key - must exist in documentations array.
+     * Use env for override; ensures "Documentation config not found" is avoided on deploy.
+     */
+    'default' => env('L5_SWAGGER_DEFAULT', 'default'),
+
     'documentations' => [
         'default' => [
             'api' => [
@@ -10,9 +15,9 @@ return [
 
             'routes' => [
                 /*
-                 * Route for accessing api documentation interface
+                 * Route for Swagger UI (avoid "documentation" - blocked by Hostinger ModSecurity)
                  */
-                'api' => 'api/documentation',
+                'api' => 'api/swagger-ui',
                 /*
                  * Route for the JSON spec (avoid /docs - blocked by Hostinger security)
                  */
